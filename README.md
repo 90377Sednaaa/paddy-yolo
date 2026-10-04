@@ -481,7 +481,7 @@ If you use Paddy-YOLO or this recreation in your research, please cite the origi
 ```bibtex
 @article{zheng2025paddy,
   title={Paddy-YOLO: An accurate method for rice pest detection},
-  author={Zheng, [Authors]},
+  author={Zheng, Yong and Zheng, Weiheng and Du, Xia},
   journal={Computers and Electronics in Agriculture},
   volume={238},
   pages={110777},
