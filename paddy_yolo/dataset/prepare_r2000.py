@@ -198,7 +198,12 @@ def prepare_kaggle_r2000(input_dir: Union[str, Path], output_dir: Union[str, Pat
     for img_file in all_images:
         target_img = images_dir / img_file.name
         if not target_img.exists() or target_img.resolve() != img_file.resolve():
-            shutil.copy2(img_file, target_img)
+            try:
+                if target_img.is_symlink() or target_img.exists():
+                    target_img.unlink()
+                os.symlink(img_file.resolve(), target_img)
+            except (OSError, NotImplementedError):
+                shutil.copy2(img_file, target_img)
 
         target_lbl = labels_dir / f"{img_file.stem}.txt"
 
