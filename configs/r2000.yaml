@@ -1,0 +1,27 @@
+# Kaggle R2000 Rice Pest Dataset Configuration for Paddy-YOLO
+path: dataset/r2000  # dataset root directory
+train: images/train  # train images (relative to 'path')
+val: images/val      # val images (relative to 'path')
+test: images/test    # test images (optional, relative to 'path')
+
+# Number of classes
+nc: 16
+
+# Class names defined in Table 4 of the Paddy-YOLO paper
+names:
+  0: rice leaf roller
+  1: pink rice borer
+  2: asiatic rice borer
+  3: yellow rice borer
+  4: rice leaf caterpillar
+  5: small brown plant hopper
+  6: white backed plant hopper
+  7: brown plant hopper
+  8: rice leaf hopper
+  9: rice gall midge
+  10: paddy stem maggot
+  11: rice stem fly
+  12: grain spreader thrips
+  13: rice weevil
+  14: rice shell pest
+  15: melanitis leda
