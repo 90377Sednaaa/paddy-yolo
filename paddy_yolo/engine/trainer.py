@@ -15,6 +15,17 @@ from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
 from paddy_yolo.modules.register import register_paddy_modules
 
 
+class PaddyCriterionInitializer:
+    """Picklable callable criterion initializer for Ultralytics DetectionModel."""
+
+    def __init__(self, model: torch.nn.Module, strategy: str = "H") -> None:
+        self.model = model
+        self.strategy = strategy
+
+    def __call__(self, *args, **kwargs) -> PaddyDetectionLoss:
+        return PaddyDetectionLoss(self.model, strategy=self.strategy)
+
+
 class PaddyTrainer(DetectionTrainer):
     """Detection trainer customized for Paddy-YOLO.
 
@@ -63,7 +74,7 @@ class PaddyTrainer(DetectionTrainer):
         register_paddy_modules()
         model = super().get_model(cfg=cfg, weights=weights, verbose=verbose)
         strategy = getattr(self, "strategy", "H")
-        model.init_criterion = lambda *args, **kwargs: PaddyDetectionLoss(model, strategy=strategy)
+        model.init_criterion = PaddyCriterionInitializer(model, strategy=strategy)
         return model
 
     def setup_model(self):
@@ -72,9 +83,7 @@ class PaddyTrainer(DetectionTrainer):
         ckpt = super().setup_model()
         if hasattr(self, "model") and isinstance(self.model, torch.nn.Module):
             strategy = getattr(self, "strategy", "H")
-            self.model.init_criterion = lambda *args, **kwargs: PaddyDetectionLoss(
-                self.model, strategy=strategy
-            )
+            self.model.init_criterion = PaddyCriterionInitializer(self.model, strategy=strategy)
         return ckpt
 
     def _on_val_start(self, validator=None) -> None:
@@ -83,9 +92,7 @@ class PaddyTrainer(DetectionTrainer):
 
         # Configure trainer model
         if hasattr(self, "model") and self.model is not None:
-            self.model.init_criterion = lambda *args, **kwargs: PaddyDetectionLoss(
-                self.model, strategy=strategy
-            )
+            self.model.init_criterion = PaddyCriterionInitializer(self.model, strategy=strategy)
             self.model.criterion = PaddyDetectionLoss(self.model, strategy=strategy)
 
         # Configure EMA model if present
@@ -95,9 +102,7 @@ class PaddyTrainer(DetectionTrainer):
             and hasattr(self.ema, "ema")
             and self.ema.ema is not None
         ):
-            self.ema.ema.init_criterion = lambda *args, **kwargs: PaddyDetectionLoss(
-                self.ema.ema, strategy=strategy
-            )
+            self.ema.ema.init_criterion = PaddyCriterionInitializer(self.ema.ema, strategy=strategy)
             self.ema.ema.criterion = PaddyDetectionLoss(self.ema.ema, strategy=strategy)
 
     def validate(self):
