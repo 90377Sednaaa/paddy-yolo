@@ -258,6 +258,8 @@ def verify_mini_training_step(device: str = "cpu") -> bool:
             "imgsz": 64,
             "device": device,
             "workers": 0,
+            "project": str(tmp_dir / "runs"),
+            "name": "verify_train",
             "plots": False,
             "save": False,
             "val": False,

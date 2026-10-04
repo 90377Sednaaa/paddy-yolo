@@ -110,12 +110,16 @@ def predict(args: argparse.Namespace) -> List[Any]:
 
     # Determine model source
     model_source: str
-    if args.weights is not None and Path(args.weights).is_file():
-        model_source = args.weights
-    elif args.model is not None and Path(args.model).is_file():
-        model_source = args.model
-    elif args.weights is not None:
-        model_source = args.weights
+    if args.weights is not None:
+        weights_path = Path(args.weights)
+        if not weights_path.is_file():
+            raise FileNotFoundError(f"Weights file not found: {args.weights}")
+        model_source = str(weights_path)
+    elif args.model is not None:
+        model_path = Path(args.model)
+        if not model_path.is_file():
+            raise FileNotFoundError(f"Model config file not found: {args.model}")
+        model_source = str(model_path)
     else:
         model_source = "configs/paddy-yolo.yaml"
 

@@ -146,3 +146,33 @@ def test_predict_script_execution(tmp_path: Path):
     res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res.returncode == 0, f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
     assert "Prediction completed" in res.stdout or "Results saved" in res.stdout
+
+
+def test_val_script_missing_weights():
+    """Verify val.py raises FileNotFoundError when --weights file does not exist."""
+    cmd = [
+        sys.executable,
+        "val.py",
+        "--weights", "nonexistent_weights_path.pt",
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert res.returncode != 0
+    assert "FileNotFoundError" in res.stderr
+    assert "Weights file not found" in res.stderr
+
+
+def test_predict_script_missing_weights(tmp_path: Path):
+    """Verify predict.py raises FileNotFoundError when --weights file does not exist."""
+    dummy_img = tmp_path / "dummy.jpg"
+    dummy_img.touch()
+    cmd = [
+        sys.executable,
+        "predict.py",
+        "--weights", "nonexistent_weights_path.pt",
+        "--source", str(dummy_img),
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert res.returncode != 0
+    assert "FileNotFoundError" in res.stderr
+    assert "Weights file not found" in res.stderr
+
