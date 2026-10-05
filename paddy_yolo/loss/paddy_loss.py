@@ -41,6 +41,8 @@ class PaddyBboxLoss(BboxLoss):
         target_scores: torch.Tensor,
         target_scores_sum: torch.Tensor | float,
         fg_mask: torch.Tensor,
+        *args,
+        **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute IoU loss with DIMIoU and DFL loss.
 

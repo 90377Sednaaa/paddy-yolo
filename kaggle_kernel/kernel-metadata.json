@@ -1,6 +1,6 @@
 {
-  "id": "sednaaa90377/paddy-yolo-baseline-r2000",
-  "title": "Paddy-YOLO Baseline YOLOv8-N R2000",
+  "id": "sednaaa90377/paddy-yolo-baseline-yolov8-n-r2000",
+  "title": "paddy-yolo-baseline-yolov8-n-r2000",
   "code_file": "paddy_yolo_baseline_training.ipynb",
   "language": "python",
   "kernel_type": "notebook",

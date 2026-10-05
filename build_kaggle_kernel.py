@@ -94,18 +94,32 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 4: Discover & Prepare Kaggle R2000 Dataset with 5-Fold Splits\n",
+                "import os, subprocess\n",
                 "from pathlib import Path\n",
                 "from paddy_yolo.dataset.prepare_r2000 import prepare_kaggle_r2000, create_5fold_splits\n",
                 "\n",
                 "kaggle_input = Path('/kaggle/input')\n",
-                "candidates = list(kaggle_input.glob('*r2000*')) if kaggle_input.exists() else []\n",
+                "data_yamls = list(kaggle_input.rglob('data.yaml')) if kaggle_input.exists() else []\n",
                 "\n",
-                "if candidates:\n",
-                "    raw_data_dir = candidates[0]\n",
-                "    print(f'Found Kaggle R2000 dataset at: {raw_data_dir}')\n",
+                "if data_yamls:\n",
+                "    raw_data_dir = data_yamls[0].parent\n",
+                "    print(f'Discovered R2000 dataset via data.yaml at: {raw_data_dir}')\n",
                 "else:\n",
-                "    raw_data_dir = Path('/kaggle/input/r2000v1-2024-images')\n",
-                "    print(f'Using default path: {raw_data_dir}')\n",
+                "    imgs = list(kaggle_input.rglob('*.jpg')) if kaggle_input.exists() else []\n",
+                "    if imgs:\n",
+                "        raw_data_dir = imgs[0].parent.parent\n",
+                "        print(f'Discovered R2000 dataset via image search at: {raw_data_dir}')\n",
+                "    else:\n",
+                "        print('Dataset not mounted in /kaggle/input. Downloading via Kaggle API...')\n",
+                "        download_dir = Path('/kaggle/working/data/raw_r2000')\n",
+                "        download_dir.mkdir(parents=True, exist_ok=True)\n",
+                "        subprocess.run([\n",
+                "            'kaggle', 'datasets', 'download',\n",
+                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '--unzip', '-p', str(download_dir)\n",
+                "        ], check=True)\n",
+                "        raw_data_dir = download_dir\n",
+                "        print(f'Downloaded and unzipped dataset to: {raw_data_dir}')\n",
                 "\n",
                 "output_dir = Path('/kaggle/working/data/r2000')\n",
                 "prepare_kaggle_r2000(input_dir=raw_data_dir, output_dir=output_dir)\n",
@@ -181,8 +195,8 @@ with open(nb_file, "w", encoding="utf-8") as f:
 
 # 3. Create kernel-metadata.json
 metadata = {
-    "id": "sednaaa90377/paddy-yolo-baseline-r2000",
-    "title": "Paddy-YOLO Baseline YOLOv8-N R2000",
+    "id": "sednaaa90377/paddy-yolo-baseline-yolov8-n-r2000",
+    "title": "paddy-yolo-baseline-yolov8-n-r2000",
     "code_file": "paddy_yolo_baseline_training.ipynb",
     "language": "python",
     "kernel_type": "notebook",
@@ -202,4 +216,4 @@ meta_file = out_dir / "kernel-metadata.json"
 with open(meta_file, "w", encoding="utf-8") as f:
     json.dump(metadata, f, indent=2)
 
-print("Kaggle kernel files generated in kaggle_kernel/ successfully.")
+print("Kaggle kernel files regenerated in kaggle_kernel/ successfully.")
