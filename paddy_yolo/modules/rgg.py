@@ -100,7 +100,7 @@ class RGGBottleneck(nn.Module):
         c2: int,
         shortcut: bool = True,
         g: int = 1,
-        k: Union[int, Tuple[int, int]] = (1, 3),
+        k: Union[int, Tuple[int, int]] = (3, 3),
         e: float = 0.5,
         act: Union[bool, nn.Module] = True,
     ):
@@ -169,7 +169,7 @@ class RGG(nn.Module):
         self.cv1 = Conv(c1, 2 * self.c, 1, 1)
         self.cv2 = Conv((2 + n) * self.c, c2, 1)
         self.m = nn.ModuleList(
-            RGGBottleneck(self.c, self.c, shortcut=shortcut, g=g, k=(1, 3), e=e)
+            RGGBottleneck(self.c, self.c, shortcut=shortcut, g=g, k=(3, 3), e=e)
             for _ in range(n)
         )
 

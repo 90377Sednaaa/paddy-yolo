@@ -108,7 +108,7 @@ def test_rgg_bottleneck_initialization():
     assert b1.add is True
     assert b1.cv1.conv.in_channels == 32
     assert b1.cv1.conv.out_channels == 32
-    assert b1.cv1.conv.kernel_size == (1, 1)
+    assert b1.cv1.conv.kernel_size == (3, 3)
 
     # Differing channels with shortcut=True
     b2 = RGGBottleneck(16, 32, shortcut=True)
