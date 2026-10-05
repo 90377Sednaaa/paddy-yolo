@@ -1,0 +1,17 @@
+{
+  "id": "sednaaa90377/paddy-yolo-baseline-r2000",
+  "title": "Paddy-YOLO Baseline YOLOv8-N R2000",
+  "code_file": "paddy_yolo_baseline_training.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "dmrashidferrer/r2000v1-2024-images"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
