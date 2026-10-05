@@ -23,6 +23,11 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         description="Train Paddy-YOLO with DIMIoU Loss and Paper Hyperparameters"
     )
     parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Train standard baseline YOLOv8-N model with CIoU loss instead of Paddy-YOLO with DIMIoU",
+    )
+    parser.add_argument(
         "--data",
         type=str,
         default="configs/r2000.yaml",
@@ -181,15 +186,24 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     else:
         workers = args.workers
 
+    # Default model and name based on baseline flag
+    default_model = "yolov8n.yaml" if args.baseline else "configs/paddy-yolo.yaml"
+    chosen_model = args.model if args.model != "configs/paddy-yolo.yaml" or not args.baseline else default_model
+    model_path = chosen_model if args.weights is None else args.weights
+
+    default_name = "baseline_yolov8n" if args.baseline else "paddy_yolo"
+    run_name = args.name if args.name != "paddy_yolo" or not args.baseline else default_name
+    experiment_name = f"{run_name}_fold{args.fold}" if args.fold is not None else run_name
+
     # Construct trainer overrides
     overrides: Dict[str, Any] = {
         **hyp_params,
-        "model": args.model if args.weights is None else args.weights,
+        "model": model_path,
         "data": data_path,
         "strategy": args.strategy,
         "device": device,
         "project": args.project,
-        "name": f"{args.name}_fold{args.fold}" if args.fold is not None else args.name,
+        "name": experiment_name,
         "workers": workers,
         "seed": args.seed,
         "resume": args.resume,
@@ -207,20 +221,31 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     if args.imgsz is not None:
         overrides["imgsz"] = args.imgsz
 
+    title = "Baseline YOLOv8-N" if args.baseline else "Paddy-YOLO"
     print("=" * 60)
-    print("Paddy-YOLO Training Configuration")
+    print(f"{title} Training Configuration")
     print("=" * 60)
     print(f"Model Architecture : {overrides.get('model')}")
     print(f"Dataset Config     : {overrides.get('data')}")
     print(f"Epochs             : {overrides.get('epochs', 300)}")
     print(f"Batch Size         : {overrides.get('batch', 32)}")
     print(f"Image Size         : {overrides.get('imgsz', 640)}")
-    print(f"DIMIoU Strategy    : {overrides.get('strategy', 'H')}")
+    if not args.baseline:
+        print(f"DIMIoU Strategy    : {overrides.get('strategy', 'H')}")
+    else:
+        print("Bounding Box Loss  : CIoU (Standard YOLOv8 Baseline)")
     print(f"Device             : {overrides.get('device')}")
     print(f"Project / Name     : {overrides.get('project')} / {overrides.get('name')}")
     print("=" * 60)
 
-    trainer = PaddyTrainer(overrides=overrides)
+    if args.baseline:
+        from ultralytics.models.yolo.detect import DetectionTrainer
+        # Remove custom strategy key for standard DetectionTrainer
+        overrides.pop("strategy", None)
+        trainer = DetectionTrainer(overrides=overrides)
+    else:
+        trainer = PaddyTrainer(overrides=overrides)
+
     trainer.train()
 
     print("\nTraining completed successfully.")
