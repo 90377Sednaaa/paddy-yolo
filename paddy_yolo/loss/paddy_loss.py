@@ -81,20 +81,73 @@ class PaddyBboxLoss(BboxLoss):
         return loss_iou, loss_dfl
 
 
+class ClassWeightedFocalLoss(torch.nn.Module):
+    """Focal Loss with class-frequency balancing for extreme class imbalance.
+
+    Reference:
+        Lin et al., "Focal Loss for Dense Object Detection", ICCV 2017.
+    """
+
+    def __init__(
+        self,
+        gamma: float = 1.5,
+        alpha: float = 0.75,
+        class_weights: torch.Tensor | None = None,
+    ) -> None:
+        super().__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        if class_weights is not None:
+            self.register_buffer("class_weights", class_weights.float())
+        else:
+            self.class_weights = None
+
+    def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        bce = torch.nn.functional.binary_cross_entropy_with_logits(pred, target, reduction="none")
+        if self.gamma > 0.0:
+            pred_prob = pred.sigmoid()
+            p_t = target * pred_prob + (1.0 - target) * (1.0 - pred_prob)
+            modulating_factor = (1.0 - p_t) ** self.gamma
+            loss = bce * modulating_factor
+        else:
+            loss = bce
+
+        if self.alpha > 0.0:
+            alpha_factor = target * self.alpha + (1.0 - target) * (1.0 - self.alpha)
+            loss = loss * alpha_factor
+
+        if self.class_weights is not None:
+            loss = loss * self.class_weights.view(1, 1, -1)
+
+        return loss
+
+
 class PaddyDetectionLoss(v8DetectionLoss):
     """Detection loss criterion for Paddy-YOLO using DIMIoU regression.
 
     Subclasses Ultralytics `v8DetectionLoss` and initializes `self.bbox_loss`
-    with `PaddyBboxLoss` using Strategy H by default.
+    with `PaddyBboxLoss` using Strategy H by default, and optionally employs
+    ClassWeightedFocalLoss to handle extreme class imbalance.
     """
 
-    def __init__(self, model, tal_topk: int = 10, strategy: str = "H") -> None:
+    def __init__(
+        self,
+        model,
+        tal_topk: int = 10,
+        strategy: str = "H",
+        focal_gamma: float = 0.0,
+        focal_alpha: float = 0.75,
+        class_weights: torch.Tensor | None = None,
+    ) -> None:
         """Initialize PaddyDetectionLoss.
 
         Args:
             model: YOLO detection model.
             tal_topk (int): Number of top candidates for TaskAlignedAssigner. Default is 10.
             strategy (str): Dynamic ratio scheduling strategy for DIMIoU. Default is 'H'.
+            focal_gamma (float): Focusing parameter for Focal Loss. Default is 1.5 (0 to disable).
+            focal_alpha (float): Positive/negative balance parameter for Focal Loss. Default is 0.75.
+            class_weights (Tensor | None): Optional per-class weight tensor of shape (nc,).
         """
         # Ensure model has args with box, cls, dfl gains formatted for attribute access
         if not hasattr(model, "args") or model.args is None:
@@ -125,9 +178,18 @@ class PaddyDetectionLoss(v8DetectionLoss):
             self.hyp = IterableSimpleNamespace(box=7.5, cls=0.5, dfl=1.5)
 
         self.strategy = strategy
+        self.focal_gamma = focal_gamma
+        self.focal_alpha = focal_alpha
         self.m = model.model[-1] if hasattr(model, "model") else None
         reg_max = getattr(self.m, "reg_max", getattr(self, "reg_max", 16))
         self.bbox_loss = PaddyBboxLoss(reg_max, strategy=strategy).to(self.device)
+
+        if focal_gamma > 0.0:
+            self.bce = ClassWeightedFocalLoss(
+                gamma=focal_gamma,
+                alpha=focal_alpha,
+                class_weights=class_weights,
+            ).to(self.device)
 
     def forward(self, preds, batch):
         """Forward pass alias for __call__."""

@@ -7,4 +7,14 @@ dist/
 build/
 runs/
 /dataset/
+data/
+kaggle_kernel/
+kaggle_paddy_kernel/
+kaggle_enhanced_kernel/
+kaggle_ema_800_kernel/
+kaggle_*_kernel/
+scratch/
+scratch*
+*.pdf
 *.pt
+.superpowers/

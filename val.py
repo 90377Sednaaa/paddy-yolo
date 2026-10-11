@@ -98,6 +98,11 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Save evaluation plots (confusion matrix, PR curves)",
     )
+    parser.add_argument(
+        "--augment",
+        action="store_true",
+        help="Enable Test-Time Augmentation (TTA) multi-scale inference",
+    )
     return parser.parse_args(args)
 
 
@@ -131,6 +136,7 @@ def validate(args: argparse.Namespace) -> Dict[str, Any]:
     print(f"Image Size     : {args.imgsz}")
     print(f"Batch Size     : {args.batch}")
     print(f"Device         : {device}")
+    print(f"Augment (TTA)  : {args.augment}")
     print("=" * 60)
 
     model = YOLO(model_source)
@@ -147,6 +153,7 @@ def validate(args: argparse.Namespace) -> Dict[str, Any]:
         name=args.name,
         save_json=args.save_json,
         plots=args.plots,
+        augment=args.augment,
     )
 
     # Extract metrics safely

@@ -18,12 +18,25 @@ from paddy_yolo.modules.register import register_paddy_modules
 class PaddyCriterionInitializer:
     """Picklable callable criterion initializer for Ultralytics DetectionModel."""
 
-    def __init__(self, model: torch.nn.Module, strategy: str = "H") -> None:
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        strategy: str = "H",
+        focal_gamma: float = 0.0,
+        focal_alpha: float = 0.75,
+    ) -> None:
         self.model = model
         self.strategy = strategy
+        self.focal_gamma = focal_gamma
+        self.focal_alpha = focal_alpha
 
     def __call__(self, *args, **kwargs) -> PaddyDetectionLoss:
-        return PaddyDetectionLoss(self.model, strategy=self.strategy)
+        return PaddyDetectionLoss(
+            self.model,
+            strategy=self.strategy,
+            focal_gamma=self.focal_gamma,
+            focal_alpha=self.focal_alpha,
+        )
 
 
 class PaddyTrainer(DetectionTrainer):
@@ -32,7 +45,8 @@ class PaddyTrainer(DetectionTrainer):
     Features:
     1. Automatic registration of Paddy-YOLO architectural modules into Ultralytics.
     2. Dynamic Inner-MPDIoU (DIMIoU Strategy H) loss substitution for bounding box regression.
-    3. Seamless preservation of PaddyDetectionLoss for both training and validation phases.
+    3. ClassWeightedFocalLoss support to address extreme agricultural pest class imbalance.
+    4. Seamless preservation of PaddyDetectionLoss for both training and validation phases.
     """
 
     def __init__(
@@ -51,9 +65,11 @@ class PaddyTrainer(DetectionTrainer):
         # Ensure custom modules are registered before any configuration loading
         register_paddy_modules()
 
-        # Extract strategy if present in overrides to avoid Ultralytics CLI arg validation error
+        # Extract strategy and focal params if present in overrides to avoid Ultralytics CLI arg validation error
         clean_overrides = copy.deepcopy(overrides) if overrides else {}
         self.strategy = clean_overrides.pop("strategy", "H")
+        self.focal_gamma = float(clean_overrides.pop("focal_gamma", 0.0))
+        self.focal_alpha = float(clean_overrides.pop("focal_alpha", 0.75))
 
         super().__init__(cfg=cfg, overrides=clean_overrides, _callbacks=_callbacks)
 
@@ -74,7 +90,11 @@ class PaddyTrainer(DetectionTrainer):
         register_paddy_modules()
         model = super().get_model(cfg=cfg, weights=weights, verbose=verbose)
         strategy = getattr(self, "strategy", "H")
-        model.init_criterion = PaddyCriterionInitializer(model, strategy=strategy)
+        focal_gamma = getattr(self, "focal_gamma", 0.0)
+        focal_alpha = getattr(self, "focal_alpha", 0.75)
+        model.init_criterion = PaddyCriterionInitializer(
+            model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+        )
         return model
 
     def setup_model(self):
@@ -83,17 +103,27 @@ class PaddyTrainer(DetectionTrainer):
         ckpt = super().setup_model()
         if hasattr(self, "model") and isinstance(self.model, torch.nn.Module):
             strategy = getattr(self, "strategy", "H")
-            self.model.init_criterion = PaddyCriterionInitializer(self.model, strategy=strategy)
+            focal_gamma = getattr(self, "focal_gamma", 0.0)
+            focal_alpha = getattr(self, "focal_alpha", 0.75)
+            self.model.init_criterion = PaddyCriterionInitializer(
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            )
         return ckpt
 
     def _on_val_start(self, validator=None) -> None:
         """Callback ensuring PaddyDetectionLoss is used during validation loss computation."""
         strategy = getattr(self, "strategy", "H")
+        focal_gamma = getattr(self, "focal_gamma", 0.0)
+        focal_alpha = getattr(self, "focal_alpha", 0.75)
 
         # Configure trainer model
         if hasattr(self, "model") and self.model is not None:
-            self.model.init_criterion = PaddyCriterionInitializer(self.model, strategy=strategy)
-            self.model.criterion = PaddyDetectionLoss(self.model, strategy=strategy)
+            self.model.init_criterion = PaddyCriterionInitializer(
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            )
+            self.model.criterion = PaddyDetectionLoss(
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            )
 
         # Configure EMA model if present
         if (
@@ -102,8 +132,12 @@ class PaddyTrainer(DetectionTrainer):
             and hasattr(self.ema, "ema")
             and self.ema.ema is not None
         ):
-            self.ema.ema.init_criterion = PaddyCriterionInitializer(self.ema.ema, strategy=strategy)
-            self.ema.ema.criterion = PaddyDetectionLoss(self.ema.ema, strategy=strategy)
+            self.ema.ema.init_criterion = PaddyCriterionInitializer(
+                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            )
+            self.ema.ema.criterion = PaddyDetectionLoss(
+                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            )
 
     def validate(self):
         """Run validation ensuring PaddyDetectionLoss is applied to the evaluation model."""

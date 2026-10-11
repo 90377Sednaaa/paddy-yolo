@@ -77,6 +77,30 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         help="Dynamic ratio scaling strategy for DIMIoU loss (default: 'H')",
     )
     parser.add_argument(
+        "--focal-gamma",
+        type=float,
+        default=0.0,
+        help="Focusing parameter gamma for Focal Loss (default: 0.0 [disabled, standard BCE], set >0 to enable)",
+    )
+    parser.add_argument(
+        "--focal-alpha",
+        type=float,
+        default=0.75,
+        help="Positive/negative class balance parameter alpha for Focal Loss (default: 0.75)",
+    )
+    parser.add_argument(
+        "--mixup",
+        type=float,
+        default=None,
+        help="MixUp data augmentation probability (overrides hyp file)",
+    )
+    parser.add_argument(
+        "--copy-paste",
+        type=float,
+        default=None,
+        help="Copy-Paste data augmentation probability (overrides hyp file)",
+    )
+    parser.add_argument(
         "--device",
         type=str,
         default=None,
@@ -136,6 +160,12 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         help="Disable saving model checkpoints",
     )
     parser.add_argument(
+        "--cache",
+        type=str,
+        default=None,
+        help="Cache dataset images in RAM ('ram', 'True') or disk ('disk') for faster training",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         default=True,
@@ -189,7 +219,30 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     # Default model and name based on baseline flag
     default_model = "yolov8n.yaml" if args.baseline else "configs/paddy-yolo.yaml"
     chosen_model = args.model if args.model != "configs/paddy-yolo.yaml" or not args.baseline else default_model
-    model_path = chosen_model if args.weights is None else args.weights
+
+    if not args.baseline and args.weights:
+        weights_path = Path(args.weights)
+        if (
+            weights_path.name in ["yolov8n.pt", "yolov8s.pt", "yolov8m.pt"]
+            or "yolov8" in weights_path.name
+        ) and "paddy" not in weights_path.name:
+            print(f"Initializing Paddy-YOLO architecture from {chosen_model} and transferring weights from {args.weights}...")
+            from ultralytics import YOLO
+            init_yolo = YOLO(chosen_model)
+            init_yolo.load(args.weights)
+            weights_dir = Path("weights")
+            weights_dir.mkdir(parents=True, exist_ok=True)
+            model_stem = Path(chosen_model).stem
+            init_path = weights_dir / f"{model_stem}_init.pt"
+            torch.save({"model": init_yolo.model}, init_path)
+            print(f"Initialized checkpoint created at: {init_path}")
+            model_path = str(init_path)
+        else:
+            model_path = args.weights
+    elif args.weights:
+        model_path = args.weights
+    else:
+        model_path = chosen_model
 
     default_name = "baseline_yolov8n" if args.baseline else "paddy_yolo"
     run_name = args.name if args.name != "paddy_yolo" or not args.baseline else default_name
@@ -201,6 +254,8 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         "model": model_path,
         "data": data_path,
         "strategy": args.strategy,
+        "focal_gamma": args.focal_gamma,
+        "focal_alpha": args.focal_alpha,
         "device": device,
         "project": args.project,
         "name": experiment_name,
@@ -220,6 +275,12 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         overrides["batch"] = args.batch
     if args.imgsz is not None:
         overrides["imgsz"] = args.imgsz
+    if args.mixup is not None:
+        overrides["mixup"] = args.mixup
+    if args.copy_paste is not None:
+        overrides["copy_paste"] = args.copy_paste
+    if args.cache is not None:
+        overrides["cache"] = True if args.cache.lower() in ("true", "ram") else args.cache
 
     title = "Baseline YOLOv8-N" if args.baseline else "Paddy-YOLO"
     print("=" * 60)
@@ -232,8 +293,16 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     print(f"Image Size         : {overrides.get('imgsz', 640)}")
     if not args.baseline:
         print(f"DIMIoU Strategy    : {overrides.get('strategy', 'H')}")
+        if args.focal_gamma > 0.0:
+            print(f"Classification Loss: Focal Loss (gamma={args.focal_gamma}, alpha={args.focal_alpha})")
+        else:
+            print("Classification Loss: Standard Binary Cross-Entropy (BCE)")
     else:
         print("Bounding Box Loss  : CIoU (Standard YOLOv8 Baseline)")
+    if overrides.get("mixup"):
+        print(f"MixUp Augmentation : {overrides.get('mixup')}")
+    if overrides.get("copy_paste"):
+        print(f"Copy-Paste Aug     : {overrides.get('copy_paste')}")
     print(f"Device             : {overrides.get('device')}")
     print(f"Project / Name     : {overrides.get('project')} / {overrides.get('name')}")
     print("=" * 60)
