@@ -30,12 +30,12 @@ def test_rggconv_initialization():
     assert layer.rep.c2 == c2
 
     # GhostConv input/output channels and kernel configuration
-    assert layer.ghost1.c1 == c1
+    assert layer.ghost1.c1 == c2
     assert layer.ghost1.c2 == c2
     assert layer.ghost1.k == 3
     assert layer.ghost1.dw_k == 5
 
-    assert layer.ghost2.c1 == c1
+    assert layer.ghost2.c1 == c2
     assert layer.ghost2.c2 == c2
     assert layer.ghost2.k == 3
     assert layer.ghost2.dw_k == 5

@@ -20,14 +20,14 @@ from paddy_yolo.modules.repconv import RepConv
 
 
 class RGGConv(nn.Module):
-    """RGG Convolution layer combining RepConv and dual GhostConvs.
+    """RGG Convolution layer combining RepConv and sequential GhostConvs.
 
-    Figure 6(b) of Paddy-YOLO:
-    - Input tensor passes in parallel through:
-      1) RepConv(c1, c2)
-      2) GhostConv(c1, c2, k=3, dw_k=5)
-      3) GhostConv(c1, c2, k=3, dw_k=5)
-    - The outputs are concatenated (3 * c2 channels).
+    Figure 6(b) of Paddy-YOLO (Zheng et al., 2025):
+    - Input tensor passes sequentially through:
+      1) RepConv(c1, c2) (first convolution layer)
+      2) GhostConv(c2, c2, k=3, dw_k=5) (second convolution layer, receives RepConv output)
+      3) GhostConv(c2, c2, k=3, dw_k=5) (third convolution layer, receives GhostConv1 output)
+    - The outputs are concatenated (3 * c2 channels) for feature reuse.
     - A 1x1 Conv projects the concatenated feature maps to c2 channels.
 
     Args:
@@ -47,8 +47,8 @@ class RGGConv(nn.Module):
         self.c2 = c2
 
         self.rep = RepConv(c1, c2, k=3, s=1, act=act)
-        self.ghost1 = GhostConv(c1, c2, k=3, s=1, dw_k=5, act=act)
-        self.ghost2 = GhostConv(c1, c2, k=3, s=1, dw_k=5, act=act)
+        self.ghost1 = GhostConv(c2, c2, k=3, s=1, dw_k=5, act=act)
+        self.ghost2 = GhostConv(c2, c2, k=3, s=1, dw_k=5, act=act)
         self.conv = Conv(3 * c2, c2, k=1, s=1, act=act)
 
         # Aliases for convenience / conventional access
@@ -58,7 +58,7 @@ class RGGConv(nn.Module):
         self.fuse = self.conv
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: parallel RepConv and GhostConvs, concatenated and fused.
+        """Forward pass: sequential RepConv -> GhostConv1 -> GhostConv2, concatenated and fused.
 
         Args:
             x: Input tensor of shape (B, c1, H, W).
@@ -67,8 +67,8 @@ class RGGConv(nn.Module):
             Output tensor of shape (B, c2, H, W).
         """
         y1 = self.rep(x)
-        y2 = self.ghost1(x)
-        y3 = self.ghost2(x)
+        y2 = self.ghost1(y1)
+        y3 = self.ghost2(y2)
         return self.conv(torch.cat((y1, y2, y3), dim=1))
 
     def switch_to_deploy(self) -> None:
