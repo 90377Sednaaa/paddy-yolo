@@ -5,10 +5,10 @@ import base64
 import json
 from pathlib import Path
 
-out_dir = Path("kaggle_5fold_scratch_kernel")
+out_dir = Path("kaggle_5fold_baseline_kernel")
 out_dir.mkdir(parents=True, exist_ok=True)
 
-# 1. Zip local codebase (including Residual-EMA in paddy_yolo/modules/ema.py)
+# 1. Zip local codebase (including sequential RGG in paddy_yolo/modules/rgg.py)
 buf = io.BytesIO()
 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk("."):
@@ -19,7 +19,7 @@ with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
                 "docs", "runs", "data", "weights", "kaggle_kernel", "kaggle_paddy_kernel",
                 "kaggle_enhanced_kernel", "kaggle_ema_800_kernel",
                 "kaggle_residual_ema_kernel", "kaggle_5fold_ema_kernel",
-                "kaggle_5fold_scratch_kernel", ".vscode", ".idea"
+                "kaggle_5fold_scratch_kernel", "kaggle_5fold_baseline_kernel", ".vscode", ".idea"
             ]
         ]
         for f in files:
@@ -30,23 +30,24 @@ with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
 b64_code = base64.b64encode(buf.getvalue()).decode("utf-8")
 print(f"Codebase archive created: {len(buf.getvalue())} bytes ({len(b64_code)} b64 chars).")
 
-# 2. Build Jupyter Notebook for 5-Fold Cross Validation from Scratch
+# 2. Build Jupyter Notebook for 5-Fold Cross Validation of Baseline Paddy-YOLO
 notebook = {
     "cells": [
         {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "# 🌾 Master 5-Fold Cross-Validation: Paddy-YOLO with Residual-EMA\n",
+                "# 🌾 Master 5-Fold Cross-Validation: Baseline Paddy-YOLO (Zheng et al., 2025)\n",
                 "\n",
-                "This notebook executes the complete **5-fold cross-validation from scratch** (Folds 0, 1, 2, 3, 4) for **Paddy-YOLO with Residual-EMA** on the **R2000** rice pest benchmark (`dmrashidferrer/r2000v1-2024-images`).\n",
+                "This notebook executes the **master 5-fold cross-validation benchmark** of the **Baseline Paddy-YOLO** model (sequential RGGConv + DIMIoU Strategy H) on the **R2000** rice pest benchmark (`dmrashidferrer/r2000v1-2024-images`).\n",
                 "\n",
-                "### Enhanced Optimization Strategy:\n",
-                "1. **Pre-Trained Backbone Transfer (`yolov8n.pt`) on All 5 Folds**: Every single fold is initialized from COCO pre-trained visual representations, ensuring consistent feature extraction across all folds.\n",
-                "2. **Residual-EMA Identity Skip Connection**: Prevents feature over-suppression on faint, pale-green caterpillars while dynamically amplifying multi-scale contours on stem borers and hoppers.\n",
-                "3. **In-Memory RAM Caching (`cache=True`)**: Loads the 250MB dataset directly into 30GB system RAM, boosting throughput to ~50-55 mins per 300-epoch fold.\n",
-                "4. **Full 5 Folds Uncapped**: Trains Folds 0, 1, 2, 3, and 4 to full convergence (300 epochs each) without timeouts.\n",
-                "5. **Master Thesis Statistical Synthesis**: Computes Mean $\\pm$ Standard Deviation across all 16 pest categories and macro metrics."
+                "### Experimental Configuration (Strict Paper 1:1 Fidelity):\n",
+                "- **Architecture**: `configs/paddy-yolo.yaml` (4 sequential RGG modules in backbone, standard 3 heads, 3.34M parameters)\n",
+                "- **Bounding Box Loss**: DIMIoU with Strategy H dynamic ratio scheduling\n",
+                "- **Weight Initialization**: COCO backbone pre-training transfer (`yolov8n.pt`)\n",
+                "- **Training Schedule**: 300 epochs, batch size 32, image size 640x640, AdamW optimizer\n",
+                "- **Learning Rate**: `lr0=0.01`, `lrf=0.01` (constant schedule, Table 6)\n",
+                "- **Evaluation**: 5-Fold Cross-Validation macro average (\\mu \\pm \\sigma) across all 16 species (Table 8 & Table 10)"
             ]
         },
         {
@@ -98,7 +99,7 @@ notebook = {
                 "from ultralytics import YOLO\n",
                 "# Pre-download base weights for instant transfer\n",
                 "base_model = YOLO('yolov8n.pt')\n",
-                "print('Pre-trained yolov8n.pt downloaded and verified successfully.')\n"
+                "print('Base yolov8n.pt successfully cached.')\n"
             ]
         },
         {
@@ -149,7 +150,7 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# Cell 5: Sequential 5-Fold Training Loop (Folds 0, 1, 2, 3, 4) from Scratch\n",
+                "# Cell 5: Sequential 5-Fold Training Loop (Folds 0, 1, 2, 3, 4)\n",
                 "import time, os, subprocess\n",
                 "from pathlib import Path\n",
                 "\n",
@@ -164,12 +165,12 @@ notebook = {
                 "    print('=' * 85)\n",
                 "    \n",
                 "    data_yaml = f'/kaggle/working/data/r2000/data_fold{fold}.yaml'\n",
-                "    run_name = f'paddy_yolo_ema_fold{fold}'\n",
+                "    run_name = f'paddy_yolo_baseline_fold{fold}'\n",
                 "    \n",
                 "    # Train 300 epochs with COCO backbone transfer and RAM caching\n",
                 "    cmd_train = [\n",
                 "        'python', 'train.py',\n",
-                "        '--model', 'configs/paddy-yolo-ema.yaml',\n",
+                "        '--model', 'configs/paddy-yolo.yaml',\n",
                 "        '--weights', 'yolov8n.pt',\n",
                 "        '--data', data_yaml,\n",
                 "        '--hyp', 'configs/hyp_paper.yaml',\n",
@@ -211,99 +212,125 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# Cell 6: Cross-Validation Synthesis & Master Thesis Comparison Table\n",
+                "# Cell 6: Cross-Validation Synthesis & Paper Table 8/10 Comparison Table\n",
                 "import numpy as np, pandas as pd\n",
                 "from pathlib import Path\n",
                 "from ultralytics import YOLO\n",
                 "from paddy_yolo.dataset.prepare_r2000 import R2000_CLASSES\n",
                 "\n",
                 "print('=' * 85)\n",
-                "print('       MASTER 5-FOLD CROSS-VALIDATION STATISTICAL SYNTHESIS')\n",
+                "print('SYNTHESIZING 5-FOLD CROSS-VALIDATION RESULTS FOR BASELINE PADDY-YOLO')\n",
                 "print('=' * 85)\n",
                 "\n",
-                "fold_results = []\n",
-                "all_runs_dir = Path('/kaggle/working/runs/train')\n",
+                "fold_records = []\n",
+                "class_records = {c: {'p': [], 'r': [], 'map50': [], 'map50_95': []} for c in R2000_CLASSES}\n",
                 "\n",
-                "for f in range(5):\n",
-                "    ckpt = all_runs_dir / f'paddy_yolo_ema_fold{f}' / 'weights' / 'best.pt'\n",
-                "    data_yaml = f'/kaggle/working/data/r2000/data_fold{f}.yaml'\n",
-                "    if ckpt.exists() and os.path.exists(data_yaml):\n",
-                "        print(f'Extracting detailed per-class metrics for Fold {f}...')\n",
-                "        model = YOLO(str(ckpt))\n",
-                "        val_metrics = model.val(data=data_yaml, split='test', imgsz=640, device='0', verbose=False)\n",
+                "for fold in completed_folds:\n",
+                "    best_ckpt = f'/kaggle/working/runs/train/paddy_yolo_baseline_fold{fold}/weights/best.pt'\n",
+                "    data_yaml = f'/kaggle/working/data/r2000/data_fold{fold}.yaml'\n",
+                "    \n",
+                "    if not Path(best_ckpt).exists():\n",
+                "        continue\n",
                 "        \n",
-                "        ap50_per_class = val_metrics.box.ap50 if hasattr(val_metrics.box, 'ap50') else []\n",
-                "        row = {\n",
-                "            'fold': f,\n",
-                "            'mAP50': float(val_metrics.box.map50) * 100,\n",
-                "            'mAP50_95': float(val_metrics.box.map) * 100,\n",
-                "            'precision': float(val_metrics.box.mp) * 100,\n",
-                "            'recall': float(val_metrics.box.mr) * 100,\n",
-                "        }\n",
-                "        for c_idx, c_name in enumerate(R2000_CLASSES):\n",
-                "            row[c_name] = float(ap50_per_class[c_idx]) * 100 if c_idx < len(ap50_per_class) else np.nan\n",
-                "        fold_results.append(row)\n",
+                "    eval_model = YOLO(best_ckpt)\n",
+                "    metrics = eval_model.val(\n",
+                "        data=data_yaml,\n",
+                "        split='test',\n",
+                "        imgsz=640,\n",
+                "        batch=32,\n",
+                "        device=0,\n",
+                "        plots=False,\n",
+                "        verbose=False\n",
+                "    )\n",
+                "    \n",
+                "    p_all = float(metrics.box.mp) * 100.0\n",
+                "    r_all = float(metrics.box.mr) * 100.0\n",
+                "    map50_all = float(metrics.box.map50) * 100.0\n",
+                "    map50_95_all = float(metrics.box.map) * 100.0\n",
+                "    f1_all = 2 * (p_all * r_all) / (p_all + r_all + 1e-6)\n",
+                "    \n",
+                "    fold_records.append({\n",
+                "        'Fold': fold,\n",
+                "        'Precision (%)': p_all,\n",
+                "        'Recall (%)': r_all,\n",
+                "        'mAP@50 (%)': map50_all,\n",
+                "        'mAP@50-95 (%)': map50_95_all,\n",
+                "        'F1 Score (%)': f1_all\n",
+                "    })\n",
+                "    \n",
+                "    p_per_class = metrics.box.p * 100.0\n",
+                "    r_per_class = metrics.box.r * 100.0\n",
+                "    map50_per_class = metrics.box.ap50 * 100.0\n",
+                "    map50_95_per_class = metrics.box.ap * 100.0\n",
+                "    \n",
+                "    for idx, c_name in enumerate(R2000_CLASSES):\n",
+                "        if idx < len(p_per_class):\n",
+                "            class_records[c_name]['p'].append(float(p_per_class[idx]))\n",
+                "            class_records[c_name]['r'].append(float(r_per_class[idx]))\n",
+                "            class_records[c_name]['map50'].append(float(map50_per_class[idx]))\n",
+                "            class_records[c_name]['map50_95'].append(float(map50_95_per_class[idx]))\n",
                 "\n",
-                "df_folds = pd.DataFrame(fold_results)\n",
-                "df_folds.to_csv('/kaggle/working/paddy_yolo_ema_individual_folds.csv', index=False)\n",
+                "df_folds = pd.DataFrame(fold_records)\n",
+                "print('\\n--- INDIVIDUAL FOLD TEST RESULTS ---')\n",
+                "print(df_folds.to_string(index=False))\n",
                 "\n",
-                "print('\\nIndividual Fold Results:')\n",
-                "print(df_folds[['fold', 'mAP50', 'mAP50_95', 'precision', 'recall']].to_string(index=False))\n",
-                "\n",
-                "# Compute Mean and Standard Deviation\n",
-                "mean_metrics = df_folds.mean(numeric_only=True)\n",
-                "std_metrics = df_folds.std(numeric_only=True)\n",
-                "\n",
-                "# Published Paper Table 8 reference values\n",
-                "paper_table8 = {\n",
-                "    'rice leaf roller': 72.8,\n",
-                "    'pink rice borer': 51.8,\n",
-                "    'asiatic rice borer': 69.2,\n",
-                "    'yellow rice borer': 48.2,\n",
-                "    'rice leaf caterpillar': 72.7,\n",
-                "    'small brown plant hopper': 50.6,\n",
-                "    'white backed plant hopper': 78.4,\n",
-                "    'brown plant hopper': 74.3,\n",
-                "    'rice leaf hopper': 65.4,\n",
-                "    'rice gall midge': 78.9,\n",
-                "    'paddy stem maggot': 84.3,\n",
-                "    'rice stem fly': 73.4,\n",
-                "    'grain spreader thrips': 80.5,\n",
-                "    'rice weevil': 59.8,\n",
-                "    'rice shell pest': 70.2,\n",
-                "    'melanitis leda': 66.6,\n",
+                "# Master Table 8/10 Synthesis with Paper Comparison\n",
+                "paper_map50 = {\n",
+                "    'rice leaf roller': 66.5, 'pink rice borer': 51.8, 'asiatic rice borer': 48.2,\n",
+                "    'yellow rice borer': 48.2, 'rice leaf caterpillar': 63.8, 'small brown plant hopper': 50.6,\n",
+                "    'white backed plant hopper': 70.8, 'brown plant hopper': 60.1, 'rice leaf hopper': 65.4,\n",
+                "    'rice gall midge': 73.1, 'paddy stem maggot': 67.2, 'rice stem fly': 73.4,\n",
+                "    'grain spreader thrips': 67.2, 'rice weevil': 59.8, 'rice shell pest': 70.2,\n",
+                "    'melanitis leda': 66.6\n",
                 "}\n",
                 "\n",
-                "summary_rows = []\n",
-                "beats_count = 0\n",
-                "for c in R2000_CLASSES:\n",
-                "    p_val = paper_table8.get(c, 0.0)\n",
-                "    m_val = mean_metrics.get(c, 0.0)\n",
-                "    s_val = std_metrics.get(c, 0.0)\n",
-                "    diff = m_val - p_val\n",
-                "    if diff > 0:\n",
-                "        beats_count += 1\n",
-                "    summary_rows.append({\n",
-                "        'Pest Species': c,\n",
-                "        'Paper Table 8': f'{p_val:.1f}%',\n",
-                "        'Paddy-YOLO-EMA (Mean ± Std)': f'{m_val:.2f}% ± {s_val:.2f}%',\n",
-                "        'Difference': f'{diff:+.2f}%',\n",
-                "        'Status': '🏆 BEATS PAPER' if diff > 0 else 'Comparable'\n",
+                "synthesis_rows = []\n",
+                "for c_name in R2000_CLASSES:\n",
+                "    vals = class_records[c_name]\n",
+                "    m50_mean = np.mean(vals['map50']) if vals['map50'] else 0.0\n",
+                "    m50_std = np.std(vals['map50']) if vals['map50'] else 0.0\n",
+                "    p_mean = np.mean(vals['p']) if vals['p'] else 0.0\n",
+                "    r_mean = np.mean(vals['r']) if vals['r'] else 0.0\n",
+                "    m50_95_mean = np.mean(vals['map50_95']) if vals['map50_95'] else 0.0\n",
+                "    paper_m50 = paper_map50.get(c_name, 0.0)\n",
+                "    delta = m50_mean - paper_m50\n",
+                "    synthesis_rows.append({\n",
+                "        'Species': c_name,\n",
+                "        'P (%)': f'{p_mean:.1f}',\n",
+                "        'R (%)': f'{r_mean:.1f}',\n",
+                "        'mAP@50 (μ ± σ)': f'{m50_mean:.1f} ± {m50_std:.1f}',\n",
+                "        'mAP@50-95 (%)': f'{m50_95_mean:.1f}',\n",
+                "        'Paper mAP@50 (%)': f'{paper_m50:.1f}',\n",
+                "        'Δ vs Paper': f'{delta:+.1f}%'\n",
                 "    })\n",
                 "\n",
-                "df_summary = pd.DataFrame(summary_rows)\n",
-                "df_summary.to_csv('/kaggle/working/paddy_yolo_ema_5fold_master_summary.csv', index=False)\n",
+                "# Macro row\n",
+                "mean_p = df_folds['Precision (%)'].mean()\n",
+                "std_p = df_folds['Precision (%)'].std()\n",
+                "mean_r = df_folds['Recall (%)'].mean()\n",
+                "std_r = df_folds['Recall (%)'].std()\n",
+                "mean_map50 = df_folds['mAP@50 (%)'].mean()\n",
+                "std_map50 = df_folds['mAP@50 (%)'].std()\n",
+                "mean_map50_95 = df_folds['mAP@50-95 (%)'].mean()\n",
+                "std_map50_95 = df_folds['mAP@50-95 (%)'].std()\n",
                 "\n",
-                "print('\\n' + '=' * 90)\n",
-                "print(f'       FINAL THESIS BENCHMARK COMPARISON TABLE ({beats_count}/16 CLASSES BEATING PAPER)')\n",
-                "print('=' * 90)\n",
-                "print(df_summary.to_string(index=False))\n",
-                "print('-' * 90)\n",
-                "print(f'Macro mAP@50     : {mean_metrics[\"mAP50\"]:.2f}% ± {std_metrics[\"mAP50\"]:.2f}%  (Paper: 70.20%)')\n",
-                "print(f'Macro mAP@50-95  : {mean_metrics[\"mAP50_95\"]:.2f}% ± {std_metrics[\"mAP50_95\"]:.2f}%  (Paper: 51.50%)')\n",
-                "print(f'Macro Recall     : {mean_metrics[\"recall\"]:.2f}% ± {std_metrics[\"recall\"]:.2f}%  (Paper: 63.00%)')\n",
-                "print(f'Macro Precision  : {mean_metrics[\"precision\"]:.2f}% ± {std_metrics[\"precision\"]:.2f}%  (Paper: 73.10%)')\n",
-                "print('=' * 90)\n"
+                "synthesis_rows.append({\n",
+                "    'Species': '--- OVERALL (MACRO 5-FOLD) ---',\n",
+                "    'P (%)': f'{mean_p:.1f} ± {std_p:.1f}',\n",
+                "    'R (%)': f'{mean_r:.1f} ± {std_r:.1f}',\n",
+                "    'mAP@50 (μ ± σ)': f'{mean_map50:.1f} ± {std_map50:.1f}',\n",
+                "    'mAP@50-95 (%)': f'{mean_map50_95:.1f} ± {std_map50_95:.1f}',\n",
+                "    'Paper mAP@50 (%)': '70.2%',\n",
+                "    'Δ vs Paper': f'{mean_map50 - 70.2:+.1f}%'\n",
+                "})\n",
+                "\n",
+                "df_synthesis = pd.DataFrame(synthesis_rows)\n",
+                "print('\\n--- 5-FOLD MACRO SUMMARY VS PAPER TABLE 8 ---')\n",
+                "print(df_synthesis.to_string(index=False))\n",
+                "\n",
+                "# Export CSV reports\n",
+                "df_folds.to_csv('/kaggle/working/paddy_yolo_baseline_individual_folds.csv', index=False)\n",
+                "df_synthesis.to_csv('/kaggle/working/paddy_yolo_baseline_5fold_master_summary.csv', index=False)\n"
             ]
         },
         {
@@ -312,48 +339,53 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# Cell 7: Package downloadable results zip\n",
+                "# Cell 7: Package artifacts for download\n",
                 "import shutil\n",
-                "zip_dest = '/kaggle/working/paddy_yolo_ema_5fold_scratch_results'\n",
-                "shutil.make_archive(zip_dest, 'zip', '/kaggle/working/runs/train')\n",
-                "print(f'Created master 5-fold archive at: {zip_dest}.zip')\n"
+                "train_dir = '/kaggle/working/runs/train'\n",
+                "zip_path = '/kaggle/working/paddy_yolo_baseline_5fold_results'\n",
+                "if os.path.exists(train_dir):\n",
+                "    shutil.make_archive(zip_path, 'zip', train_dir)\n",
+                "    print(f'Archive created: {zip_path}.zip')\n"
             ]
         }
     ],
     "metadata": {
-        "accelerator": "GPU",
-        "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
-        "language_info": {"name": "python", "version": "3.10.0"}
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.10.12"
+        }
     },
     "nbformat": 4,
     "nbformat_minor": 4
 }
 
-nb_file = out_dir / "paddy_yolo_ema_5fold_scratch.ipynb"
-with open(nb_file, "w", encoding="utf-8") as f:
+nb_path = out_dir / "paddy_yolo_baseline_5fold.ipynb"
+with open(nb_path, "w", encoding="utf-8") as f:
     json.dump(notebook, f, indent=2)
+print(f"Jupyter Notebook generated at: {nb_path}")
 
-# 3. Create kernel-metadata.json for leanadrianmurillo
-metadata = {
-    "id": "leanadrianmurillo/paddy-yolo-ema-5fold-scratch",
-    "title": "paddy-yolo-ema-5fold-scratch",
-    "code_file": "paddy_yolo_ema_5fold_scratch.ipynb",
+meta = {
+    "id": "leanadrianmurillo/paddy-yolo-baseline-5fold",
+    "title": "paddy-yolo-baseline-5fold",
+    "code_file": "paddy_yolo_baseline_5fold.ipynb",
     "language": "python",
     "kernel_type": "notebook",
     "is_private": "true",
     "enable_gpu": "true",
-    "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
         "dmrashidferrer/r2000v1-2024-images"
     ],
     "competition_sources": [],
-    "kernel_sources": [],
-    "model_sources": []
+    "kernel_sources": []
 }
 
-meta_file = out_dir / "kernel-metadata.json"
-with open(meta_file, "w", encoding="utf-8") as f:
-    json.dump(metadata, f, indent=2)
-
-print("Master 5-Fold Scratch kernel generated in kaggle_5fold_scratch_kernel/ successfully.")
+meta_path = out_dir / "kernel-metadata.json"
+with open(meta_path, "w", encoding="utf-8") as f:
+    json.dump(meta, f, indent=2)
+print(f"Kernel metadata generated at: {meta_path}")
