@@ -18,3 +18,4 @@ scratch*
 *.pdf
 *.pt
 .superpowers/
+.venv/

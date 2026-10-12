@@ -15,7 +15,7 @@ with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         dirs[:] = [
             d for d in dirs
             if d not in [
-                ".git", "__pycache__", ".pytest_cache", ".superpowers",
+                ".git", ".venv", "__pycache__", ".pytest_cache", ".superpowers",
                 "docs", "runs", "data", "weights", "kaggle_kernel", "kaggle_paddy_kernel",
                 "kaggle_enhanced_kernel", "kaggle_ema_800_kernel",
                 "kaggle_residual_ema_kernel", ".vscode", ".idea"
@@ -38,7 +38,7 @@ notebook = {
             "source": [
                 "# 🌾 Proposed Architecture: Paddy-YOLO with Residual Multi-Scale Attention (Residual-EMA)\n",
                 "\n",
-                "This notebook trains and benchmarks the proposed **Paddy-YOLO with Residual-EMA** model on the **R2000** rice pest dataset (`dmrashidferrer/r2000v1-2024-images`).\n",
+                "This notebook trains and benchmarks the proposed **Paddy-YOLO with Residual-EMA** model on the **R2000** rice pest dataset (`dmrashidpferrer/r2000-pestnet`).\n",
                 "\n",
                 "### Scientific Innovations Directly Addressing the Paper Benchmark (70.2%):\n",
                 "1. **Residual Skip Connection in EMA Attention**: $\\text{Output} = x + \\text{EMA}(x)$. Guarantees the network never suppresses subtle insect cues (preserving baseline accuracy on camouflaged borers and caterpillars) while selectively amplifying pest contours.\n",
@@ -90,7 +90,7 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 3: Install Ultralytics and Run Sanity Verification\n",
-                "!pip install ultralytics -q\n",
+                "!pip install ultralytics==8.3.253 -q\n",
                 "!python verify_paddy_yolo.py --smoke-test\n"
             ]
         },
@@ -122,7 +122,7 @@ notebook = {
                 "        download_dir.mkdir(parents=True, exist_ok=True)\n",
                 "        subprocess.run([\n",
                 "            'kaggle', 'datasets', 'download',\n",
-                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '-d', 'dmrashidpferrer/r2000-pestnet',\n",
                 "            '--unzip', '-p', str(download_dir)\n",
                 "        ], check=True)\n",
                 "        raw_data_dir = download_dir\n",
@@ -322,7 +322,7 @@ metadata = {
     "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
-        "dmrashidferrer/r2000v1-2024-images"
+        "dmrashidpferrer/r2000-pestnet"
     ],
     "competition_sources": [],
     "kernel_sources": [

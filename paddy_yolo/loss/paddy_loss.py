@@ -22,7 +22,7 @@ class PaddyBboxLoss(BboxLoss):
     (Strategy H by default) for bounding box regression.
     """
 
-    def __init__(self, reg_max: int = 16, strategy: str = "H") -> None:
+    def __init__(self, reg_max: int = 16, strategy: str = "H", fixed_ratio=None) -> None:
         """Initialize PaddyBboxLoss.
 
         Args:
@@ -31,6 +31,7 @@ class PaddyBboxLoss(BboxLoss):
         """
         super().__init__(reg_max)
         self.strategy = strategy
+        self.fixed_ratio = fixed_ratio
 
     def forward(
         self,
@@ -64,6 +65,7 @@ class PaddyBboxLoss(BboxLoss):
             target_bboxes[fg_mask],
             xywh=False,
             strategy=self.strategy,
+            ratio=getattr(self, "fixed_ratio", None),
         )
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
@@ -138,6 +140,7 @@ class PaddyDetectionLoss(v8DetectionLoss):
         focal_gamma: float = 0.0,
         focal_alpha: float = 0.75,
         class_weights: torch.Tensor | None = None,
+        fixed_ratio=None,
     ) -> None:
         """Initialize PaddyDetectionLoss.
 
@@ -182,7 +185,7 @@ class PaddyDetectionLoss(v8DetectionLoss):
         self.focal_alpha = focal_alpha
         self.m = model.model[-1] if hasattr(model, "model") else None
         reg_max = getattr(self.m, "reg_max", getattr(self, "reg_max", 16))
-        self.bbox_loss = PaddyBboxLoss(reg_max, strategy=strategy).to(self.device)
+        self.bbox_loss = PaddyBboxLoss(reg_max, strategy=strategy, fixed_ratio=fixed_ratio).to(self.device)
 
         if focal_gamma > 0.0:
             self.bce = ClassWeightedFocalLoss(
@@ -190,6 +193,16 @@ class PaddyDetectionLoss(v8DetectionLoss):
                 alpha=focal_alpha,
                 class_weights=class_weights,
             ).to(self.device)
+
+    def __call__(self, preds, batch):
+        """Keep the package's scalar-loss API across Ultralytics releases.
+
+        Recent v8DetectionLoss versions return three batch-scaled components;
+        their trainer sums these before backward. Older versions already sum.
+        Summing here preserves the same objective in either case.
+        """
+        loss, loss_items = super().__call__(preds, batch)
+        return loss.sum(), loss_items
 
     def forward(self, preds, batch):
         """Forward pass alias for __call__."""

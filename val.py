@@ -36,8 +36,8 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--data",
         type=str,
-        default="configs/r2000.yaml",
-        help="Path to dataset YAML config (default: configs/r2000.yaml)",
+        default="dataset/r2000/data_fold0.yaml",
+        help="Path to prepared dataset YAML (default: dataset/r2000/data_fold0.yaml)",
     )
     parser.add_argument(
         "--imgsz",
@@ -140,6 +140,12 @@ def validate(args: argparse.Namespace) -> Dict[str, Any]:
     print("=" * 60)
 
     model = YOLO(model_source)
+    # Fuse custom RepConv branches before Ultralytics fuses their child Convs.
+    from paddy_yolo.modules.repconv import RepConv
+    model.model.eval()
+    for module in list(model.model.modules()):
+        if isinstance(module, RepConv):
+            module.switch_to_deploy()
 
     metrics = model.val(
         data=args.data,

@@ -138,6 +138,11 @@ def predict(args: argparse.Namespace) -> List[Any]:
     print("=" * 60)
 
     model = YOLO(model_source)
+    from paddy_yolo.modules.repconv import RepConv
+    model.model.eval()
+    for module in list(model.model.modules()):
+        if isinstance(module, RepConv):
+            module.switch_to_deploy()
 
     results = model.predict(
         source=args.source,

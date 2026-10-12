@@ -30,18 +30,18 @@ def test_rggconv_initialization():
     assert layer.rep.c2 == c2
 
     # GhostConv input/output channels and kernel configuration
-    assert layer.ghost1.c1 == c1
+    assert layer.ghost1.c1 == c2
     assert layer.ghost1.c2 == c2
     assert layer.ghost1.k == 3
     assert layer.ghost1.dw_k == 5
 
-    assert layer.ghost2.c1 == c1
+    assert layer.ghost2.c1 == c2
     assert layer.ghost2.c2 == c2
     assert layer.ghost2.k == 3
     assert layer.ghost2.dw_k == 5
 
-    # 1x1 projection conv takes 3 * c2 -> c2
-    assert layer.conv.conv.in_channels == 3 * c2
+    # Figure 6(b): input + RepConv output + final GhostConv output.
+    assert layer.conv.conv.in_channels == c1 + 2 * c2
     assert layer.conv.conv.out_channels == c2
     assert layer.conv.conv.kernel_size == (1, 1)
 
@@ -59,6 +59,33 @@ def test_rggconv_forward_shape():
     layer2 = RGGConv(16, 48)
     out2 = layer2(x2)
     assert out2.shape == (4, 48, 40, 40)
+
+
+def test_rggconv_figure6_connections():
+    """Check actual data dependencies, not just shapes, against Figure 6(b)."""
+    layer = RGGConv(8, 8).eval()
+    x = torch.randn(1, 8, 5, 5)
+    inputs, outputs = {}, {}
+    handles = []
+    for name in ("rep", "ghost1", "ghost2", "conv"):
+        def record(module, args, output, key=name):
+            inputs[key] = args[0].detach().clone()
+            outputs[key] = output.detach().clone()
+        handles.append(getattr(layer, name).register_forward_hook(record))
+    try:
+        with torch.no_grad():
+            layer(x)
+        torch.testing.assert_close(inputs["ghost1"], outputs["rep"])
+        torch.testing.assert_close(inputs["ghost2"], outputs["ghost1"])
+        torch.testing.assert_close(inputs["conv"], torch.cat((x, outputs["rep"], outputs["ghost2"]), 1))
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
+def test_rgg_state_dict_has_no_duplicate_aliases():
+    keys = RGG(16, 16).state_dict()
+    assert not any("rgg_conv" in key or ".cv2.cv1." in key or ".cv2.fuse." in key for key in keys)
 
 
 def test_rggconv_gradients():

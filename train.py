@@ -30,8 +30,8 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--data",
         type=str,
-        default="configs/r2000.yaml",
-        help="Path to dataset YAML config (default: configs/r2000.yaml)",
+        default="dataset/r2000/data_fold0.yaml",
+        help="Path to prepared dataset YAML (default: dataset/r2000/data_fold0.yaml)",
     )
     parser.add_argument(
         "--model",
@@ -76,6 +76,8 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         default="H",
         help="Dynamic ratio scaling strategy for DIMIoU loss (default: 'H')",
     )
+    parser.add_argument("--impdiou", action="store_true", help="Use fixed-ratio IMPDIoU with the RGG model")
+    parser.add_argument("--inner-ratio", type=float, default=1.3, help="Fixed IMPDIoU ratio (paper R2000: 1.3)")
     parser.add_argument(
         "--focal-gamma",
         type=float,
@@ -178,15 +180,14 @@ def resolve_data_config(data: str, fold: Optional[int] = None) -> str:
     """Resolve data YAML path, accounting for 5-fold cross validation if requested."""
     if fold is not None:
         candidate_paths = [
+            Path(data).parent / f"data_fold{fold}.yaml",
             Path(f"dataset/r2000/data_fold{fold}.yaml"),
             Path(f"data_fold{fold}.yaml"),
-            Path(data).parent / f"data_fold{fold}.yaml",
         ]
         for candidate in candidate_paths:
             if candidate.is_file():
                 return str(candidate.resolve())
-        # If specific candidate file wasn't found directly, return the fold yaml name
-        return f"data_fold{fold}.yaml"
+        raise FileNotFoundError(f"No prepared data_fold{fold}.yaml found; run dataset preparation first")
     return data
 
 
@@ -194,10 +195,14 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     """Run Paddy-YOLO training."""
     # Ensure custom modules are registered
     register_paddy_modules()
+    if args.baseline and args.impdiou:
+        raise ValueError("--baseline is the standard CIoU comparison; --impdiou trains the RGG model")
 
     # Load baseline paper hyperparameters if specified
     hyp_params: Dict[str, Any] = {}
-    if args.hyp and Path(args.hyp).is_file():
+    if args.hyp:
+        if not Path(args.hyp).is_file():
+            raise FileNotFoundError(f"Hyperparameter config file not found: {args.hyp}")
         with open(args.hyp, "r", encoding="utf-8") as f:
             hyp_params = yaml.safe_load(f) or {}
 
@@ -254,6 +259,7 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         "model": model_path,
         "data": data_path,
         "strategy": args.strategy,
+        "fixed_ratio": args.inner_ratio if args.impdiou else None,
         "focal_gamma": args.focal_gamma,
         "focal_alpha": args.focal_alpha,
         "device": device,
@@ -292,7 +298,10 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     print(f"Batch Size         : {overrides.get('batch', 32)}")
     print(f"Image Size         : {overrides.get('imgsz', 640)}")
     if not args.baseline:
-        print(f"DIMIoU Strategy    : {overrides.get('strategy', 'H')}")
+        if args.impdiou:
+            print(f"Bounding Box Loss  : IMPDIoU (fixed ratio {args.inner_ratio})")
+        else:
+            print(f"DIMIoU Strategy    : {overrides.get('strategy', 'H')}")
         if args.focal_gamma > 0.0:
             print(f"Classification Loss: Focal Loss (gamma={args.focal_gamma}, alpha={args.focal_alpha})")
         else:
@@ -308,10 +317,15 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     print("=" * 60)
 
     if args.baseline:
-        from ultralytics.models.yolo.detect import DetectionTrainer
+        from paddy_yolo.engine.baseline import BaselineTrainer
         # Remove custom strategy key for standard DetectionTrainer
         overrides.pop("strategy", None)
-        trainer = DetectionTrainer(overrides=overrides)
+        overrides.pop("fixed_ratio", None)
+        overrides.pop("focal_gamma", None)
+        overrides.pop("focal_alpha", None)
+        if not args.weights and str(model_path).endswith(".yaml"):
+            overrides["pretrained"] = False
+        trainer = BaselineTrainer(overrides=overrides)
     else:
         trainer = PaddyTrainer(overrides=overrides)
 

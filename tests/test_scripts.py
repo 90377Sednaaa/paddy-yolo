@@ -59,7 +59,8 @@ def test_predict_script_help():
         assert opt in res.stdout, f"Expected {opt} in predict.py --help"
 
 
-def test_train_script_execution(tmp_path: Path):
+@pytest.mark.parametrize("baseline", [False, True, "impdiou"])
+def test_train_script_execution(tmp_path: Path, baseline):
     """Verify train.py completes 1 epoch training run on synthetic dataset."""
     data_dir = tmp_path / "train_dummy"
     generate_dummy_dataset(data_dir, num_images=4, img_size=(64, 64))
@@ -89,8 +90,26 @@ def test_train_script_execution(tmp_path: Path):
         "--project", str(project_dir),
         "--name", "test_train",
     ]
+    if baseline is True:
+        cmd.append("--baseline")
+    elif baseline == "impdiou":
+        cmd += ["--impdiou", "--inner-ratio", "1.3"]
     res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res.returncode == 0, f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+    if baseline == "impdiou" or baseline is False:
+        from ultralytics import YOLO
+        from paddy_yolo.modules.rgg import RGG
+        from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
+        model = YOLO(str(project_dir / "test_train/weights/best.pt")).model
+        criterion = model.init_criterion()
+        assert isinstance(criterion, PaddyDetectionLoss)
+        assert criterion.bbox_loss.fixed_ratio == (1.3 if baseline == "impdiou" else None)
+        assert criterion.bbox_loss.strategy == "H"
+        assert sum(isinstance(part, RGG) for part in model.modules()) == 4
+        if baseline == "impdiou":
+            assert "IMPDIoU (fixed ratio 1.3)" in res.stdout
+        else:
+            assert "DIMIoU Strategy    : H" in res.stdout
 
 
 def test_val_script_execution(tmp_path: Path):

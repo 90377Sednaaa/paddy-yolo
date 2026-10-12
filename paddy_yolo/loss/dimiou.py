@@ -79,6 +79,7 @@ def dimiou(
     xywh: bool = False,
     strategy: str = "H",
     eps: float = 1e-7,
+    ratio: float | None = None,
 ) -> torch.Tensor:
     """Compute Dynamic Inner-MPDIoU (DIMIoU) metric values.
 
@@ -89,6 +90,11 @@ def dimiou(
     4. MPDIoU normalized corner distances penalty.
 
     DIMIoU = InnerIoU - (d1^2 + d2^2) / C^2
+
+    Normalization assumption: C is the smallest enclosing box diagonal.
+    Paper Eq. (2) uses the input image diagonal, but Eqs. (4)-(5) use
+    w^2+h^2 without specifying which box. This implementation's choice
+    must not be described as verified agreement with the authors' code.
 
     Args:
         box1 (torch.Tensor): Bounding box tensor of shape (..., 4).
@@ -135,7 +141,12 @@ def dimiou(
     iou = torch.clamp(inter / union, 0.0, 1.0)
 
     # 2. Dynamic ratio adjustment
-    ratio = get_dynamic_ratio(iou, strategy=strategy)
+    if ratio is None:
+        ratio = get_dynamic_ratio(iou, strategy=strategy)
+    else:
+        if not math.isfinite(ratio) or ratio <= 0:
+            raise ValueError("IMPDIoU requires a finite positive fixed ratio")
+        ratio = torch.full_like(iou, ratio)
 
     # 3. InnerIoU scaled boxes around center coordinates
     w1_r_half = (w1 * ratio) / 2
@@ -192,3 +203,16 @@ def dimiou_loss(
         torch.Tensor: DIMIoU loss tensor of shape (..., 1).
     """
     return 1.0 - dimiou(box1, box2, xywh=xywh, strategy=strategy, eps=eps)
+
+
+def impdiou(box1, box2, xywh=False, ratio=1.3, eps=1e-7):
+    """Fixed-ratio IMPDIoU, Eqs. (4)-(5); paper's R2000 ratio is 1.3.
+
+    Retains the disclosed enclosing-diagonal normalization assumption.
+    """
+    return dimiou(box1, box2, xywh=xywh, eps=eps, ratio=ratio)
+
+
+def impdiou_loss(box1, box2, xywh=False, ratio=1.3, eps=1e-7):
+    """Fixed-ratio Inner-MPDIoU loss, rather than dynamic Strategy H."""
+    return 1.0 - impdiou(box1, box2, xywh=xywh, ratio=ratio, eps=eps)

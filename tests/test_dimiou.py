@@ -1,6 +1,8 @@
 import pytest
+import math
 import torch
 from paddy_yolo.loss.dimiou import dimiou, dimiou_loss, get_dynamic_ratio
+from paddy_yolo.loss.dimiou import impdiou_loss
 from paddy_yolo.loss import (
     dimiou as exported_dimiou,
     dimiou_loss as exported_dimiou_loss,
@@ -38,6 +40,45 @@ def test_dimiou_shifted_boxes():
     assert loss.item() > 0.0
     assert 0.0 < metric.item() < 1.0
     assert torch.isclose(loss + metric, torch.tensor([[1.0]]), atol=1e-4)
+
+
+def test_dimiou_numerical_reference_for_enclosing_normalization():
+    """Independent numeric reference for the disclosed denominator assumption."""
+    eps = 1e-7
+    a = torch.tensor([[0., 0., 4., 4.]], dtype=torch.float64)
+    b = torch.tensor([[1., 1., 5., 5.]], dtype=torch.float64)
+    base_iou = 9 / (23 + eps)
+    ratio = 1 - 0.5 * math.cos(math.pi * base_iou)
+    inner_intersection = (4 * ratio - 1) ** 2
+    inner_union = 32 * ratio ** 2 - inner_intersection + eps
+    expected = 1 - inner_intersection / inner_union + 4 / (50 + eps)
+    assert dimiou_loss(a, b).item() == pytest.approx(expected, abs=1e-12)
+
+
+def test_fixed_impdiou_ratio_13_numerical_reference():
+    a = torch.tensor([[0., 0., 4., 4.]], dtype=torch.float64)
+    b = torch.tensor([[1., 1., 5., 5.]], dtype=torch.float64)
+    intersection = (4 * 1.3 - 1) ** 2
+    expected = 1 - intersection / (32 * 1.3 ** 2 - intersection + 1e-7) + 4 / (50 + 1e-7)
+    assert impdiou_loss(a, b, ratio=1.3).item() == pytest.approx(expected, abs=1e-12)
+    assert not torch.allclose(impdiou_loss(a, b), dimiou_loss(a, b))
+
+
+def test_fixed_impdiou_does_not_use_dynamic_strategy(monkeypatch):
+    import importlib
+    module = importlib.import_module("paddy_yolo.loss.dimiou")
+    def forbidden(*args, **kwargs):
+        raise AssertionError("IMPDIoU must not compute a dynamic ratio")
+    monkeypatch.setattr(module, "get_dynamic_ratio", forbidden)
+    a = torch.tensor([[0., 0., 4., 4.]], requires_grad=True)
+    impdiou_loss(a, a + 1).sum().backward()
+    assert torch.isfinite(a.grad).all()
+
+
+def test_dimiou_gradient_matches_finite_differences():
+    pred = torch.tensor([[0., 0., 4., 4.]], dtype=torch.float64, requires_grad=True)
+    target = torch.tensor([[1., 0.5, 5., 4.5]], dtype=torch.float64)
+    assert torch.autograd.gradcheck(lambda box: dimiou_loss(box, target), (pred,))
 
 
 def test_dimiou_disjoint_boxes():

@@ -12,12 +12,14 @@ out_dir.mkdir(parents=True, exist_ok=True)
 # 1. Zip local codebase
 buf = io.BytesIO()
 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-    for root, dirs, files in os.walk("."):
-        dirs[:] = [d for d in dirs if d not in [".git", "__pycache__", ".pytest_cache", ".superpowers", "docs", "runs", "data", "kaggle_kernel", ".vscode", ".idea"]]
-        for f in files:
-            if f.endswith((".py", ".yaml", ".txt", ".md")) and not f.endswith("review-pkg.diff"):
-                p = os.path.join(root, f)
-                z.write(p, p)
+    # Explicit allowlist: no credentials, scratch artifacts, or unrelated files.
+    sources = [Path("train.py"), Path("val.py"), Path("verify_paddy_yolo.py"),
+               Path("run_baseline_crossval.py"), Path("configs/hyp_paper.yaml"),
+               Path("docs/replication-audit.md")]
+    sources.extend(sorted(Path("paddy_yolo").rglob("*.py")))
+    sources.extend(sorted(Path("configs").glob("*.yaml")))
+    for p in sorted(set(sources)):
+        z.write(p, p.as_posix())
 
 b64_code = base64.b64encode(buf.getvalue()).decode("utf-8")
 print(f"Codebase archive created. Size: {len(buf.getvalue())} bytes ({len(b64_code)} b64 chars).")
@@ -31,7 +33,7 @@ notebook = {
             "source": [
                 "# 🌾 Paddy-YOLO: Baseline YOLOv8-N Training on R2000\n",
                 "\n",
-                "This notebook trains the **Baseline YOLOv8-N** model on the **R2000** rice pest dataset (`dmrashidferrer/r2000v1-2024-images`) to reproduce the baseline benchmark from Zheng et al. (*Computers and Electronics in Agriculture*, 2025).\n",
+                "This notebook trains the **Baseline YOLOv8-N** model on the **R2000** rice pest dataset (`dmrashidpferrer/r2000-pestnet`) to reproduce the baseline benchmark from Zheng et al. (*Computers and Electronics in Agriculture*, 2025).\n",
                 "\n",
                 "### Configuration:\n",
                 "- **Model Architecture**: YOLOv8-N (standard)\n",
@@ -83,7 +85,7 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 3: Install Ultralytics and Run Sanity Check\n",
-                "!pip install ultralytics -q\n",
+                "!pip install ultralytics==8.3.253 -q\n",
                 "!python verify_paddy_yolo.py --smoke-test\n"
             ]
         },
@@ -115,7 +117,7 @@ notebook = {
                 "        download_dir.mkdir(parents=True, exist_ok=True)\n",
                 "        subprocess.run([\n",
                 "            'kaggle', 'datasets', 'download',\n",
-                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '-d', 'dmrashidpferrer/r2000-pestnet',\n",
                 "            '--unzip', '-p', str(download_dir)\n",
                 "        ], check=True)\n",
                 "        raw_data_dir = download_dir\n",
@@ -205,7 +207,7 @@ metadata = {
     "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
-        "dmrashidferrer/r2000v1-2024-images"
+        "dmrashidpferrer/r2000-pestnet"
     ],
     "competition_sources": [],
     "kernel_sources": [],

@@ -20,14 +20,12 @@ from paddy_yolo.modules.repconv import RepConv
 
 
 class RGGConv(nn.Module):
-    """RGG Convolution layer combining RepConv and dual GhostConvs.
+    """RGG Convolution layer combining sequential RepConv and dual GhostConvs.
 
     Figure 6(b) of Paddy-YOLO:
-    - Input tensor passes in parallel through:
-      1) RepConv(c1, c2)
-      2) GhostConv(c1, c2, k=3, dw_k=5)
-      3) GhostConv(c1, c2, k=3, dw_k=5)
-    - The outputs are concatenated (3 * c2 channels).
+    - RepConv -> GhostConv -> GhostConv is a sequential path.
+    - Input, RepConv output, and final GhostConv output are concatenated.
+      Figure 6(b) uses c1 == c2, giving 3 * c2 channels.
     - A 1x1 Conv projects the concatenated feature maps to c2 channels.
 
     Args:
@@ -47,18 +45,18 @@ class RGGConv(nn.Module):
         self.c2 = c2
 
         self.rep = RepConv(c1, c2, k=3, s=1, act=act)
-        self.ghost1 = GhostConv(c1, c2, k=3, s=1, dw_k=5, act=act)
-        self.ghost2 = GhostConv(c1, c2, k=3, s=1, dw_k=5, act=act)
-        self.conv = Conv(3 * c2, c2, k=1, s=1, act=act)
+        self.ghost1 = GhostConv(c2, c2, k=3, s=1, dw_k=5, act=act)
+        self.ghost2 = GhostConv(c2, c2, k=3, s=1, dw_k=5, act=act)
+        self.conv = Conv(c1 + 2 * c2, c2, k=1, s=1, act=act)
 
-        # Aliases for convenience / conventional access
-        self.cv1 = self.rep
-        self.cv2 = self.ghost1
-        self.cv3 = self.ghost2
-        self.fuse = self.conv
+    # Properties avoid registering the same submodule twice in state_dict.
+    cv1 = property(lambda self: self.rep)
+    cv2 = property(lambda self: self.ghost1)
+    cv3 = property(lambda self: self.ghost2)
+    fuse = property(lambda self: self.conv)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: parallel RepConv and GhostConvs, concatenated and fused.
+        """Forward pass through Figure 6(b)'s sequential path and skip connections.
 
         Args:
             x: Input tensor of shape (B, c1, H, W).
@@ -67,9 +65,9 @@ class RGGConv(nn.Module):
             Output tensor of shape (B, c2, H, W).
         """
         y1 = self.rep(x)
-        y2 = self.ghost1(x)
-        y3 = self.ghost2(x)
-        return self.conv(torch.cat((y1, y2, y3), dim=1))
+        y2 = self.ghost1(y1)
+        y3 = self.ghost2(y2)
+        return self.conv(torch.cat((x, y1, y3), dim=1))
 
     def switch_to_deploy(self) -> None:
         """Switch internal RepConv branch to deploy mode."""
@@ -81,7 +79,8 @@ class RGGBottleneck(nn.Module):
     """RGGBottleneck residual module.
 
     Figure 6(c) of Paddy-YOLO:
-    - Conv(c1, c2, 1) -> RGGConv(c2, c2).
+    - Conv(c1, c2, 3) -> RGGConv(c2, c2).
+      The figure does not specify this Conv's kernel; 3x3 retains YOLOv8's convention.
     - Shortcut connection: x + path(x) when shortcut=True and c1 == c2, else path(x).
 
     Args:
@@ -89,7 +88,7 @@ class RGGBottleneck(nn.Module):
         c2: Number of output channels.
         shortcut: Whether to enable residual shortcut connection (default: True).
         g: Groups for convolution (default: 1).
-        k: Kernel size tuple (default: (1, 3)).
+        k: Kernel size tuple (default: (3, 3)).
         e: Expansion ratio (default: 0.5).
         act: Activation function or boolean flag (default: True).
     """
@@ -115,7 +114,8 @@ class RGGBottleneck(nn.Module):
         k1 = k[0] if isinstance(k, (tuple, list)) else k
         self.cv1 = Conv(c1, c2, k=k1, s=1, act=act)
         self.cv2 = RGGConv(c2, c2, act=act)
-        self.rgg_conv = self.cv2  # alias
+
+    rgg_conv = property(lambda self: self.cv2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: residual shortcut + RGGConv(Conv(x)).

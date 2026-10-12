@@ -102,3 +102,19 @@ def test_paddy_yolo_eval_forward_shape():
     pred_tensor = preds[0] if isinstance(preds, (tuple, list)) else preds
     # Shape: (batch=1, channels=4+16=20, anchors=8400)
     assert pred_tensor.shape == (1, 20, 8400), f"Expected shape (1, 20, 8400), got {pred_tensor.shape}"
+
+
+def test_full_model_deploy_and_ultralytics_fusion_equivalence():
+    """The CLI deployment sequence must preserve detector predictions."""
+    from paddy_yolo.modules.repconv import RepConv
+    model = YOLO("configs/paddy-yolo.yaml").model.eval()
+    image = torch.randn(1, 3, 64, 64)
+    with torch.no_grad():
+        before = model(image)[0]
+        for module in list(model.modules()):
+            if isinstance(module, RepConv):
+                module.switch_to_deploy()
+        model.fuse(verbose=False)
+        after = model(image)[0]
+    torch.testing.assert_close(before, after, rtol=1e-4, atol=1e-4)
+    assert all(module.deploy for module in model.modules() if isinstance(module, RepConv))

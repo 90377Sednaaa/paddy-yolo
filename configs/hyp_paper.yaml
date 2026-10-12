@@ -1,5 +1,7 @@
 # Paddy-YOLO Paper Hyperparameters Configuration
-# Based on experimental settings described in the Paddy-YOLO research paper
+# Table 6 specifies epochs, batch, imgsz, optimizer, learning rates, momentum, weight decay.
+# Interpret its final-learning-rate setting as Ultralytics' lrf ratio (not absolute LR).
+# Remaining settings below are explicit replication assumptions, not reported values.
 
 task: detect
 mode: train
@@ -15,12 +17,17 @@ lr0: 0.01
 lrf: 0.01
 momentum: 0.937
 weight_decay: 0.0005
-cos_lr: true
+# Learning-rate schedule is not specified; retain the YOLOv8 linear default.
+cos_lr: false
+# Complete all 300 epochs rather than use Ultralytics' default early stopping.
+patience: 0
 
 # Warmup parameters
 warmup_epochs: 3.0
 warmup_momentum: 0.8
-warmup_bias_lr: 0.1
+# AdamW-compatible warmup: do not start bias updates at 10x the reported lr0.
+# The first run logged bias LR 0.0707895 in epoch 1 with the inherited 0.1 setting.
+warmup_bias_lr: 0.0
 
 # Loss gains
 box: 7.5

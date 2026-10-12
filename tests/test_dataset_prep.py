@@ -36,6 +36,79 @@ EXPECTED_CLASSES = [
 ]
 
 
+def test_source_class_order_is_remapped(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    Image.new("RGB", (32, 32)).save(raw / "one.jpg")
+    (raw / "one.txt").write_text("0 0.5 0.5 0.2 0.2\n")
+    (raw / "data.yaml").write_text(yaml.safe_dump({"names": list(reversed(EXPECTED_CLASSES))}))
+    out = prepare_kaggle_r2000(raw, tmp_path / "out")
+    assert (out / "labels/one.txt").read_text().startswith("15 ")
+
+
+def test_users_nested_kaggle_layout_and_generic_class_names(tmp_path):
+    raw = tmp_path / "raw"
+    (raw / "images/train").mkdir(parents=True)
+    (raw / "labels/train").mkdir(parents=True)
+    Image.new("RGB", (32, 32)).save(raw / "images/train/08_00001_.jpg")
+    (raw / "labels/train/08_00001_.txt").write_text("08 0.5 0.5 0.2 0.2\n")
+    (raw / "data.yaml").write_text(yaml.safe_dump({"names": {i: f"classID_{i:02}" for i in range(16)}}))
+    out = prepare_kaggle_r2000(raw, tmp_path / "out")
+    assert (out / "labels/08_00001_.txt").read_text().startswith("8 ")
+
+
+def test_duplicate_images_stay_in_the_same_crossvalidation_fold(tmp_path):
+    import shutil
+    generate_dummy_dataset(tmp_path, num_images=9, img_size=(32, 32))
+    shutil.copyfile(tmp_path / "images/img_0000.jpg", tmp_path / "images/duplicate.jpg")
+    shutil.copyfile(tmp_path / "labels/img_0000.txt", tmp_path / "labels/duplicate.txt")
+    create_5fold_splits(tmp_path)
+    original = (tmp_path / "images/img_0000.jpg").as_posix()
+    duplicate = (tmp_path / "images/duplicate.jpg").as_posix()
+    for i in range(5):
+        for split in ("train", "val", "test"):
+            paths = (tmp_path / f"fold{i}_{split}.txt").read_text().splitlines()
+            assert (original in paths) == (duplicate in paths)
+
+
+def test_flattening_duplicate_stems_is_rejected(tmp_path):
+    raw = tmp_path / "raw"
+    for folder in ("train", "val"):
+        directory = raw / folder
+        directory.mkdir(parents=True)
+        Image.new("RGB", (32, 32)).save(directory / "same.jpg")
+    with pytest.raises(ValueError, match="Duplicate image stem"):
+        prepare_kaggle_r2000(raw, tmp_path / "out")
+
+
+def test_missing_annotation_is_rejected(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    Image.new("RGB", (32, 32)).save(raw / "one.jpg")
+    with pytest.raises(FileNotFoundError, match="No annotation"):
+        prepare_kaggle_r2000(raw, tmp_path / "out")
+
+
+def test_revised_github_extra_classes_are_rejected_without_yaml(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    Image.new("RGB", (32, 32)).save(raw / "one.jpg")
+    (raw / "one.txt").write_text("16 0.5 0.5 0.2 0.2\n")
+    with pytest.raises(ValueError, match="Invalid class ID"):
+        prepare_kaggle_r2000(raw, tmp_path / "out")
+
+
+def test_splits_preserve_symlink_label_paths(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    generate_dummy_dataset(raw, num_images=5, img_size=(32, 32))
+    out = prepare_kaggle_r2000(raw, tmp_path / "prepared")
+    create_5fold_splits(out)
+    paths = (out / "fold0_test.txt").read_text().splitlines()
+    assert all(Path(p).parent == out / "images" for p in paths)
+    assert all((out / "labels" / (Path(p).stem + ".txt")).exists() for p in paths)
+
+
 def test_r2000_classes_table4_compliance():
     """Verify class list strictly adheres to Table 4 of Paddy-YOLO paper."""
     assert len(R2000_CLASSES) == 16

@@ -12,7 +12,7 @@ out_dir.mkdir(parents=True, exist_ok=True)
 buf = io.BytesIO()
 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk("."):
-        dirs[:] = [d for d in dirs if d not in [".git", "__pycache__", ".pytest_cache", ".superpowers", "docs", "runs", "data", "kaggle_kernel", "kaggle_paddy_kernel", ".vscode", ".idea"]]
+        dirs[:] = [d for d in dirs if d not in [".git", ".venv", "__pycache__", ".pytest_cache", ".superpowers", "docs", "runs", "data", "kaggle_kernel", "kaggle_paddy_kernel", ".vscode", ".idea"]]
         for f in files:
             if f.endswith((".py", ".yaml", ".txt", ".md")) and not f.endswith("review-pkg.diff"):
                 p = os.path.join(root, f)
@@ -30,7 +30,7 @@ notebook = {
             "source": [
                 "# 🌾 Paddy-YOLO: Proposed Architecture Training on R2000\n",
                 "\n",
-                "This notebook trains the actual **Paddy-YOLO** model (RGG Backbone + Dynamic Inner-MPDIoU / DIMIoU Loss) on the **R2000** rice pest dataset (`dmrashidferrer/r2000v1-2024-images`).\n",
+                "This notebook trains the actual **Paddy-YOLO** model (RGG Backbone + Dynamic Inner-MPDIoU / DIMIoU Loss) on the **R2000** rice pest dataset (`dmrashidpferrer/r2000-pestnet`).\n",
                 "\n",
                 "### Architectural Innovations (Zheng et al., 2025):\n",
                 "- **Backbone**: 4 RGG blocks replacing C2f in YOLOv8-N (RepConv + dual GhostConv with 5x5 DWConv + feature concatenation).\n",
@@ -81,7 +81,7 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 3: Install Ultralytics and Run Sanity Check\n",
-                "!pip install ultralytics -q\n",
+                "!pip install ultralytics==8.3.253 -q\n",
                 "!python verify_paddy_yolo.py --smoke-test\n"
             ]
         },
@@ -113,7 +113,7 @@ notebook = {
                 "        download_dir.mkdir(parents=True, exist_ok=True)\n",
                 "        subprocess.run([\n",
                 "            'kaggle', 'datasets', 'download',\n",
-                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '-d', 'dmrashidpferrer/r2000-pestnet',\n",
                 "            '--unzip', '-p', str(download_dir)\n",
                 "        ], check=True)\n",
                 "        raw_data_dir = download_dir\n",
@@ -238,7 +238,7 @@ metadata = {
     "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
-        "dmrashidferrer/r2000v1-2024-images"
+        "dmrashidpferrer/r2000-pestnet"
     ],
     "competition_sources": [],
     "kernel_sources": [],

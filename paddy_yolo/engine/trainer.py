@@ -13,6 +13,7 @@ from ultralytics.models.yolo.detect import DetectionTrainer
 
 from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
 from paddy_yolo.modules.register import register_paddy_modules
+from paddy_yolo.engine.baseline import BaselineTrainer
 
 
 class PaddyCriterionInitializer:
@@ -24,11 +25,13 @@ class PaddyCriterionInitializer:
         strategy: str = "H",
         focal_gamma: float = 0.0,
         focal_alpha: float = 0.75,
+        fixed_ratio=None,
     ) -> None:
         self.model = model
         self.strategy = strategy
         self.focal_gamma = focal_gamma
         self.focal_alpha = focal_alpha
+        self.fixed_ratio = fixed_ratio
 
     def __call__(self, *args, **kwargs) -> PaddyDetectionLoss:
         return PaddyDetectionLoss(
@@ -36,10 +39,11 @@ class PaddyCriterionInitializer:
             strategy=self.strategy,
             focal_gamma=self.focal_gamma,
             focal_alpha=self.focal_alpha,
+            fixed_ratio=getattr(self, "fixed_ratio", None),
         )
 
 
-class PaddyTrainer(DetectionTrainer):
+class PaddyTrainer(BaselineTrainer):
     """Detection trainer customized for Paddy-YOLO.
 
     Features:
@@ -68,6 +72,7 @@ class PaddyTrainer(DetectionTrainer):
         # Extract strategy and focal params if present in overrides to avoid Ultralytics CLI arg validation error
         clean_overrides = copy.deepcopy(overrides) if overrides else {}
         self.strategy = clean_overrides.pop("strategy", "H")
+        self.fixed_ratio = clean_overrides.pop("fixed_ratio", None)
         self.focal_gamma = float(clean_overrides.pop("focal_gamma", 0.0))
         self.focal_alpha = float(clean_overrides.pop("focal_alpha", 0.75))
 
@@ -93,7 +98,7 @@ class PaddyTrainer(DetectionTrainer):
         focal_gamma = getattr(self, "focal_gamma", 0.0)
         focal_alpha = getattr(self, "focal_alpha", 0.75)
         model.init_criterion = PaddyCriterionInitializer(
-            model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+            model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
         )
         return model
 
@@ -106,7 +111,7 @@ class PaddyTrainer(DetectionTrainer):
             focal_gamma = getattr(self, "focal_gamma", 0.0)
             focal_alpha = getattr(self, "focal_alpha", 0.75)
             self.model.init_criterion = PaddyCriterionInitializer(
-                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
         return ckpt
 
@@ -119,10 +124,10 @@ class PaddyTrainer(DetectionTrainer):
         # Configure trainer model
         if hasattr(self, "model") and self.model is not None:
             self.model.init_criterion = PaddyCriterionInitializer(
-                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
             self.model.criterion = PaddyDetectionLoss(
-                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
 
         # Configure EMA model if present
@@ -133,10 +138,10 @@ class PaddyTrainer(DetectionTrainer):
             and self.ema.ema is not None
         ):
             self.ema.ema.init_criterion = PaddyCriterionInitializer(
-                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
             self.ema.ema.criterion = PaddyDetectionLoss(
-                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha
+                self.ema.ema, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
 
     def validate(self):

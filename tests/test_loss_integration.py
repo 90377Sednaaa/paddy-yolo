@@ -5,6 +5,20 @@ from ultralytics import YOLO
 from ultralytics.nn.tasks import DetectionModel
 
 
+@pytest.fixture
+def local_data(tmp_path):
+    """Trainer tests must not require downloading the external coco8 dataset."""
+    import yaml
+    from paddy_yolo.dataset.prepare_r2000 import generate_dummy_dataset, R2000_CLASSES
+    generate_dummy_dataset(tmp_path, num_images=2, img_size=(64, 64))
+    data = tmp_path / "data.yaml"
+    data.write_text(yaml.safe_dump({
+        "path": tmp_path.as_posix(), "train": "images", "val": "images",
+        "names": R2000_CLASSES,
+    }), encoding="utf-8")
+    return str(data)
+
+
 def test_imports_and_exports():
     """Verify PaddyBboxLoss, PaddyDetectionLoss, and PaddyTrainer can be imported from package roots."""
     from paddy_yolo.loss import PaddyBboxLoss, PaddyDetectionLoss
@@ -122,14 +136,14 @@ def test_paddy_detection_loss_forward_and_backward():
     assert loss_items_2.shape == (3,)
 
 
-def test_paddy_trainer_initialization_and_get_model():
+def test_paddy_trainer_initialization_and_get_model(local_data):
     """Verify PaddyTrainer instantiates, registers modules, and configures model with PaddyDetectionLoss."""
     from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
     from paddy_yolo.engine.trainer import PaddyTrainer
 
     # Use small dataset/config overrides
     overrides = {
-        "data": "coco8.yaml",
+        "data": local_data,
         "model": "configs/paddy-yolo.yaml",
         "epochs": 1,
         "imgsz": 64,
@@ -170,14 +184,14 @@ def test_paddy_trainer_initialization_and_get_model():
     assert isinstance(model.criterion, PaddyDetectionLoss)
 
 
-def test_paddy_trainer_validation_loss_integration():
+def test_paddy_trainer_validation_loss_integration(local_data):
     """Verify PaddyTrainer callbacks/methods ensure PaddyDetectionLoss is used during validation."""
     from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
     from paddy_yolo.engine.trainer import PaddyTrainer
     from ultralytics.utils.torch_utils import ModelEMA
 
     overrides = {
-        "data": "coco8.yaml",
+        "data": local_data,
         "model": "configs/paddy-yolo.yaml",
         "epochs": 1,
         "imgsz": 64,
@@ -191,8 +205,10 @@ def test_paddy_trainer_validation_loss_integration():
 
     # Trigger val start callback
     mock_validator = type("MockValidator", (), {"model": None, "args": trainer.args})()
-    for cb in trainer.callbacks.get("on_val_start", []):
-        cb(mock_validator)
+    # Exercise our registered callback, without invoking unrelated HUB callbacks
+    # whose validators require additional external integration state.
+    assert trainer._on_val_start in trainer.callbacks.get("on_val_start", [])
+    trainer._on_val_start(mock_validator)
 
     # Check both model and ema.ema have PaddyDetectionLoss criterion configured
     assert isinstance(trainer.model.criterion, PaddyDetectionLoss)

@@ -39,7 +39,7 @@ def verify_repconv(device: str = "cpu") -> bool:
     """Verify RepConv multi-branch training mode and fused deploy mode numerical equivalence."""
     print("  [1.1] Testing RepConv training forward and backward pass...")
     torch.manual_seed(42)
-    rep = RepConv(c1=32, c2=32, k=3, s=1, act="silu", deploy=False).to(device)
+    rep = RepConv(c1=32, c2=32, k=3, s=1, act=True, deploy=False).to(device)
     rep.train()
 
     x = torch.randn(2, 32, 16, 16, device=device, requires_grad=True)
@@ -69,7 +69,7 @@ def verify_repconv(device: str = "cpu") -> bool:
     assert max_diff < 1e-4, f"RepConv deploy output mismatch: max diff = {max_diff:.6e}"
 
     # Also verify c1 != c2 case (where identity is not added)
-    rep_diff_ch = RepConv(c1=16, c2=32, k=3, s=1, act="silu", deploy=False).to(device)
+    rep_diff_ch = RepConv(c1=16, c2=32, k=3, s=1, act=True, deploy=False).to(device)
     rep_diff_ch.eval()
     x_ch = torch.randn(2, 16, 16, 16, device=device)
     with torch.no_grad():
@@ -207,7 +207,7 @@ def verify_model_architecture(device: str = "cpu") -> bool:
     # Check number of classes
     assert getattr(model, "nc", 16) == 16, f"Expected 16 classes, found {getattr(model, 'nc', 16)}"
 
-    # Check parameter count (~3.16M - 3.33M)
+    # Training form has ~3.375M parameters; fully fused deployment has ~3.341M.
     param_count = sum(p.numel() for p in model.parameters())
     print(f"  [5.3] Model parameter count: {param_count:,} parameters")
     assert 3_000_000 < param_count < 3_600_000, (

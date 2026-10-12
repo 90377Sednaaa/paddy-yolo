@@ -148,8 +148,9 @@ def test_ghostconv_odd_channels():
     layer = GhostConv(8, 3)
     out = layer(x)
     assert out.shape == (2, 3, 16, 16)
-    assert layer.cv1.conv.out_channels == 1
+    assert layer.cv1.conv.out_channels == 2
     assert layer.cv2.conv.out_channels == 2
+    assert layer.cv2.conv.groups == layer.cv2.conv.in_channels == 2
 
 
 def test_ghostconv_export_in_modules_init():

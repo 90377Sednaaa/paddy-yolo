@@ -6,7 +6,9 @@ Complies with Section 2.1.5, Table 4, and Table 5 of the Paddy-YOLO paper.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -139,6 +141,8 @@ def _parse_voc_xml(xml_path: Path, img_width: int, img_height: int) -> list[str]
             cls_id = class_to_idx[obj_name]
         else:
             continue
+        if not 0 <= cls_id < len(R2000_CLASSES):
+            raise ValueError(f"Class ID {cls_id} is outside the paper's 16 classes in {xml_path}")
 
         bndbox = obj.find("bndbox")
         if bndbox is None:
@@ -187,13 +191,42 @@ def prepare_kaggle_r2000(input_dir: Union[str, Path], output_dir: Union[str, Pat
     labels_dir.mkdir(parents=True, exist_ok=True)
 
     # Discover all images
-    all_images = [
+    all_images = sorted([
         p for p in in_path.rglob("*")
         if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-    ]
+    ])
 
     if not all_images:
         raise FileNotFoundError(f"No image files found in {in_path}")
+
+    # Flattening duplicate stems would overwrite both images and annotations.
+    stems = {}
+    for img_file in all_images:
+        key = img_file.stem.lower()
+        if key in stems:
+            raise ValueError(f"Duplicate image stem: {stems[key]} and {img_file}")
+        stems[key] = img_file
+
+    # YOLO exports may use a different class order from the paper's Table 4.
+    class_map = None
+    source_yaml = in_path / "data.yaml"
+    if source_yaml.is_file():
+        source_names = (yaml.safe_load(source_yaml.read_text(encoding="utf-8")) or {}).get("names")
+        if source_names is not None:
+            names = dict(enumerate(source_names)) if isinstance(source_names, list) else source_names
+            canonical = {name: i for i, name in enumerate(R2000_CLASSES)}
+            class_map = {}
+            for idx, name in names.items():
+                normalized = str(name).strip().lower().replace("_", " ")
+                # The user's GitHub-derived export preserves paper IDs using
+                # generic names classID_00 ... classID_15 rather than species names.
+                generic = re.fullmatch(r"classid[ _]?(\d+)", normalized)
+                if generic and 0 <= int(generic[1]) < len(R2000_CLASSES):
+                    class_map[int(idx)] = int(generic[1])
+                    continue
+                if normalized not in canonical:
+                    raise ValueError(f"Unknown R2000 class in {source_yaml}: {name}")
+                class_map[int(idx)] = canonical[normalized]
 
     for img_file in all_images:
         target_img = images_dir / img_file.name
@@ -207,8 +240,15 @@ def prepare_kaggle_r2000(input_dir: Union[str, Path], output_dir: Union[str, Pat
 
         target_lbl = labels_dir / f"{img_file.stem}.txt"
 
+        relative_parts = list(img_file.relative_to(in_path).parts)
+        nested_label = None
+        if "images" in relative_parts:
+            relative_parts[relative_parts.index("images")] = "labels"
+            nested_label = (in_path / Path(*relative_parts)).with_suffix(".txt")
+
         # Search candidate label files
         candidates_txt = [
+            nested_label or img_file.with_suffix(".txt"),
             img_file.with_suffix(".txt"),
             img_file.parent.parent / "labels" / f"{img_file.stem}.txt",
             in_path / "labels" / f"{img_file.stem}.txt",
@@ -221,7 +261,27 @@ def prepare_kaggle_r2000(input_dir: Union[str, Path], output_dir: Union[str, Pat
 
         found_txt = next((c for c in candidates_txt if c.is_file()), None)
         if found_txt is not None:
-            if not target_lbl.exists() or target_lbl.resolve() != found_txt.resolve():
+            # Reject additional classes in revised GitHub archives even when
+            # there is no data.yaml. Never train a 16-class head on IDs 16-17.
+            source_lines = found_txt.read_text(encoding="utf-8").splitlines()
+            for line in source_lines:
+                if not line.strip():
+                    continue
+                parts = line.split()
+                source_id = int(parts[0])
+                allowed = class_map if class_map is not None else range(len(R2000_CLASSES))
+                if len(parts) != 5 or source_id not in allowed:
+                    raise ValueError(f"Invalid class ID or YOLO detection annotation in {found_txt}: {line}")
+            if class_map is not None:
+                lines = []
+                for line in source_lines:
+                    if not line.strip():
+                        continue
+                    parts = line.split()
+                    parts[0] = str(class_map[int(parts[0])])
+                    lines.append(" ".join(parts))
+                target_lbl.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+            elif not target_lbl.exists() or target_lbl.resolve() != found_txt.resolve():
                 shutil.copy2(found_txt, target_lbl)
             continue
 
@@ -236,9 +296,9 @@ def prepare_kaggle_r2000(input_dir: Union[str, Path], output_dir: Union[str, Pat
             target_lbl.write_text("\n".join(yolo_lines) + "\n", encoding="utf-8")
             continue
 
-        # If no label exists, create empty label file (background image)
-        if not target_lbl.exists():
-            target_lbl.write_text("", encoding="utf-8")
+        # An absent annotation is not evidence that this is a background image.
+        # Intentional background images must supply an empty annotation file.
+        raise FileNotFoundError(f"No annotation found for {img_file}")
 
     return out_path
 
@@ -282,14 +342,27 @@ def create_5fold_splits(
             f"Dataset must contain at least 5 images for 5-fold cross validation. Found {len(image_paths)}."
         )
 
-    # Deterministic shuffling
-    rng = np.random.RandomState(seed)
-    indices = np.arange(len(image_paths))
-    rng.shuffle(indices)
-    shuffled_paths = [image_paths[i].resolve().as_posix() for i in indices]
+    # Keep byte-identical images together to prevent held-out leakage. The
+    # supplied Kaggle export reports duplicate images with different annotations.
+    groups = {}
+    for path in image_paths:
+        digest = hashlib.sha256(path.read_bytes()).digest()
+        groups.setdefault(digest, []).append(path.absolute().as_posix())
 
-    # Split into 5 folds
-    split_folds = [list(f) for f in np.array_split(shuffled_paths, 5)]
+    # Deterministic shuffling, followed by largest-group-first placement.
+    rng = np.random.RandomState(seed)
+    shuffled_groups = list(groups.values())
+    rng.shuffle(shuffled_groups)
+    shuffled_groups.sort(key=len, reverse=True)
+    split_folds = [[] for _ in range(5)]
+    capacity = [len(f) for f in np.array_split(np.arange(len(image_paths)), 5)]
+    for group in shuffled_groups:
+        available = [i for i in range(5) if capacity[i] >= len(group)]
+        if not available:
+            raise ValueError("Duplicate groups cannot fit balanced fivefold splits without leakage")
+        fold = max(available, key=lambda i: capacity[i])
+        split_folds[fold].extend(group)
+        capacity[fold] -= len(group)
 
     yaml_paths: list[str] = []
 
@@ -350,7 +423,7 @@ def build_argparser() -> argparse.ArgumentParser:
         "--kaggle-dir",
         type=str,
         default=None,
-        help="Path to raw Kaggle R2000 dataset directory (dmrashidferrer/r2000v1-2024-images)",
+        help="Path to raw Kaggle R2000 dataset directory (dmrashidpferrer/r2000-pestnet)",
     )
     parser.add_argument(
         "--output",

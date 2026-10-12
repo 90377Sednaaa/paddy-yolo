@@ -4,12 +4,15 @@
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Ultralytics YOLOv8](https://img.shields.io/badge/Ultralytics-YOLOv8-00ffff.svg)](https://github.com/ultralytics/ultralytics)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Verification: Passed](https://img.shields.io/badge/Verification-All%206%20Checks%20Passed-brightgreen.svg)](#quickstart--verification)
-
-> **Official Recreation and Implementation** of the research paper:  
+> **Independent replication** of the research paper:
 > **"Paddy-YOLO: An accurate method for rice pest detection"**  
 > *Computers and Electronics in Agriculture*, Volume 238 (2025), Article 110777.  
 > DOI: [10.1016/j.compag.2025.110777](https://doi.org/10.1016/j.compag.2025.110777)
+
+See the [replication audit](docs/replication-audit.md) for verified corrections and
+remaining uncertainties. Passing software tests does not establish reproduction
+of published accuracy. Use `configs/paddy-yolo.yaml` for the paper model; EMA,
+P2, focal loss, 800-pixel inputs, and fine-tuning are separate extensions.
 
 ---
 
@@ -51,7 +54,7 @@ Accurate and automated rice pest detection is critical to food security and prec
 1. **RGG (RepGG) Feature Extraction Modules**: Replacing all 4 `C2f` modules in the YOLOv8 backbone with re-parameterized ghost modules to maximize multi-scale representational capacity while controlling FLOPs and parameter overhead.
 2. **RepConv**: Multi-branch topology during training (3x3 conv, 1x1 conv, identity) seamlessly folded into a single 3x3 convolution at deployment via structural re-parameterization, resulting in **zero inference speed penalty**.
 3. **GhostConv (5x5 DWConv)**: Generating feature maps via cheap 5x5 depthwise convolution operations to capture broader spatial context of subtle pest features.
-4. **DIMIoU Bounding Box Regression Loss (Strategy H)**: Combining Inner IoU scaling with a smooth cosine dynamic ratio curve and a normalized four-corner Euclidean distance penalty, dramatically improving small and overlapping pest localization.
+4. **DIMIoU Bounding Box Regression Loss (Strategy H)**: Inner IoU scaling with a cosine dynamic ratio and two corner-distance penalties. Normalization is a replication assumption documented in the audit.
 
 ---
 
@@ -61,29 +64,23 @@ Accurate and automated rice pest detection is critical to food security and prec
 
 The standard YOLOv8-N backbone employs `C2f` modules at stages P2/4, P3/8, P4/16, and P5/32. In Paddy-YOLO, layers 2, 4, 6, and 8 are replaced with **RGG modules**:
 
+```text
+Input -> 1x1 Conv -> split into y0, y1 (C2/2 channels each)
+y2 = RGGBottleneck(y1)
+y3 = RGGBottleneck(y2)  # continue for n bottlenecks
+Concat(y0, y1, y2, ..., y[n+1]) -> 1x1 Conv -> Output
 ```
-                       Input [B, C1, H, W]
-                                |
-                   +------------+------------+
-                   |                         |
-              Split (c_ = C2/2)         Split (c_ = C2/2)
-                   |                         |
-            [RGGBottleneck 1]             (Identity)
-                   |                         |
-            [RGGBottleneck 2]                |
-                   |                         |
-                   +------------+------------+
-                                |
-                             Concat
-                                |
-                        Conv 1x1 [c_*2 -> C2]
-                                |
-                       Output [B, C2, H, W]
-```
+
+This implementation retains C2f's intermediate concatenations; Figure 6(d) is
+simplified and does not explicitly draw them. See the audit for this assumption.
 
 ### 2. Structural Re-parameterization (RepConv)
 
 Inside `RGGBottleneck`, the second convolutional operation uses `RGGConv`, which integrates `RepConv`:
+
+Figure 6(b) connects `x -> RepConv -> GhostConv -> GhostConv` sequentially.
+The input, RepConv output, and final GhostConv output are concatenated before
+a 1x1 projection. Each GhostConv uses a 3x3 primary and 5x5 depthwise convolution.
 
 - **Training Phase**: Operates as an ensemble of three parallel branches:
   - Branch 1: $3 \times 3$ Convolution + Batch Normalization
@@ -114,9 +111,12 @@ Bounding box regression uses **DIMIoU with Strategy H**:
    - $\text{IoU} \to 0$: $\text{ratio} \to 0.5$ (focuses on inner core region, speeding up convergence when boxes are misaligned)
    - $\text{IoU} \to 1$: $\text{ratio} \to 1.5$ (evaluates larger spatial context for fine-grained sub-pixel alignment)
 
-3. **Four-Corner Euclidean Distance Penalty**:
-   Measures distances across all four corners $(d_1, d_2, d_3, d_4)$ between predicted and target boxes, normalized by the enclosing diagonal squared $C^2$:
-   $$R_{\text{corner}} = \frac{1}{4} \sum_{i=1}^4 \frac{d_i^2}{C^2}$$
+3. **Two-Corner Euclidean Distance Penalty**:
+   Corresponding top-left and bottom-right corners contribute squared distances:
+   $$R_{\text{corner}} = \frac{d_1^2 + d_2^2}{C^2}$$
+   The implementation uses the smallest enclosing box diagonal squared.
+   Equation (2) uses the image diagonal, while Equations (4)-(5) use `w^2+h^2`
+   without identifying which box. See the audit for this unresolved ambiguity.
 
 4. **Total Loss**:
    $$\mathcal{L}_{\text{DIMIoU}} = 1 - \text{IoU}_{\text{inner}} + R_{\text{corner}}$$
@@ -149,7 +149,7 @@ Experiment/
 │   └── dataset/
 │       ├── __init__.py         # Dataset preparation exports
 │       └── prepare_r2000.py    # Kaggle R2000 Pascal VOC converter & 5-fold CV generator
-├── tests/                      # Full pytest test suite (79 comprehensive unit/integration tests)
+├── tests/                      # Unit and integration tests
 ├── train.py                    # Training CLI script (with 5-fold CV and paper hyp support)
 ├── val.py                      # Validation and evaluation CLI script (mAP, F1-score, PR curves)
 ├── predict.py                  # Inference CLI script (image, directory, video detection)
@@ -165,7 +165,7 @@ Experiment/
 
 - Python 3.9, 3.10, 3.11, 3.12, or 3.13
 - PyTorch 2.0+ (CUDA GPU recommended for training, CPU supported for inference)
-- Ultralytics 8.0+
+- Ultralytics 8.3.253 (integration version pinned in requirements.txt)
 
 ### Setup
 
@@ -176,7 +176,7 @@ cd paddy-yolo
 
 # Install dependencies
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-pip install ultralytics pyyaml numpy pillow pytest
+pip install -r requirements.txt
 ```
 
 ---
@@ -195,8 +195,8 @@ The verification suite automatically runs:
 1. **RepConv Equivalence Check**: Verifies 3-branch training mode and fused deploy mode numerical match ($|\Delta| < 10^{-4}$).
 2. **GhostConv 5x5 DWConv Check**: Verifies 5x5 depthwise convolution cheap operation, output dimensions, and gradient flow.
 3. **RGG Module Residuals & Gradients**: Validates split-and-merge paths, residual shortcuts, and deployment re-parameterization.
-4. **DIMIoU Loss & Strategy H**: Validates Strategy H cosine ratio curve ($0.5 \to 1.5$), four-corner penalty, and backpropagation.
-5. **Model Architecture Check**: Parses `configs/paddy-yolo.yaml`, confirms parameter count (~3.16M params), and verifies multi-scale forward pass.
+4. **DIMIoU Loss & Strategy H**: Validates Strategy H cosine ratio curve ($0.5 \to 1.5$), two-corner penalty, and backpropagation.
+5. **Model Architecture Check**: Parses `configs/paddy-yolo.yaml`, reports parameter count (see the audit for comparison with the paper), and verifies multi-scale forward pass.
 6. **End-to-End Mini Training**: Synthesizes a temporary 2-image dataset, trains 1 epoch via `PaddyTrainer`, and confirms gradient updates.
 
 ### Fast Smoke-Test
@@ -211,7 +211,7 @@ python verify_paddy_yolo.py --smoke-test
 
 ### The 16 Rice Pest Classes
 
-The model is trained on the Kaggle R2000 dataset (`dmrashidferrer/r2000v1-2024-images`) comprising 16 pest classes defined in Table 4 of the paper:
+The user's [GitHub-derived Kaggle export](https://www.kaggle.com/datasets/dmrashidpferrer/r2000-pestnet) reports the same 2,024 images, 2,281 boxes and 16 classes as Table 4. Its supplied 60/15/25 split differs from the paper's fivefold protocol. The preparation script supports its generic `classID_XX` names and nested image/label directories. Sample-by-sample equivalence has not been checked.
 
 | Class ID | Class Name | Category |
 |:---:|:---|:---|
@@ -236,13 +236,13 @@ The model is trained on the Kaggle R2000 dataset (`dmrashidferrer/r2000v1-2024-i
 
 Download the dataset from Kaggle:
 ```bash
-kaggle datasets download -d dmrashidferrer/r2000v1-2024-images -p raw_data/ --unzip
+kaggle datasets download -d dmrashidpferrer/r2000-pestnet -p raw_data/r2000-pestnet --unzip
 ```
 
 Run the automated preparation script:
 ```bash
 python paddy_yolo/dataset/prepare_r2000.py \
-    --kaggle-dir raw_data/r2000v1-2024-images \
+    --kaggle-dir raw_data/r2000-pestnet \
     --output dataset/r2000 \
     --seed 42
 ```
@@ -250,8 +250,10 @@ python paddy_yolo/dataset/prepare_r2000.py \
 This will:
 - Parse Pascal VOC `.xml` annotations and convert them to standard YOLO `.txt` format (`[class_id x_center y_center width height]`).
 - Clean and normalize image filenames.
-- Generate standard dataset config `dataset/r2000/data.yaml`.
-- Partition the dataset into **5-fold cross-validation splits** per Section 2.1.5 of the paper (`r2000_fold0.yaml` through `r2000_fold4.yaml`).
+- Generate **5-fold cross-validation splits** following Section 2.1.5 (`data_fold0.yaml` through `data_fold4.yaml`): three training folds, one validation fold, one test fold.
+- Remap source class IDs using `data.yaml` when supplied. Without it, label IDs must already use Table 4's order.
+- Reject duplicate image stems and missing annotations. Intentional background images require an empty label file.
+- Keep byte-identical images in the same cross-validation fold to prevent duplicate leakage.
 
 ### Generating Synthetic Testing Dataset
 
@@ -270,7 +272,7 @@ Train Paddy-YOLO with the paper hyperparameters and DIMIoU loss:
 
 ```bash
 python train.py \
-    --data configs/r2000.yaml \
+    --data dataset/r2000/data_fold0.yaml \
     --model configs/paddy-yolo.yaml \
     --hyp configs/hyp_paper.yaml \
     --epochs 300 \
@@ -298,7 +300,7 @@ python train.py --fold 1 --epochs 300 --batch 32
 
 ```bash
 python train.py \
-    --data dataset/r2000/data.yaml \
+    --data dataset/r2000/data_fold0.yaml \
     --epochs 1 \
     --batch 2 \
     --imgsz 64 \
@@ -306,7 +308,13 @@ python train.py \
     --workers 0
 ```
 
-### Paper Hyperparameters
+### Training Hyperparameters
+
+Table 6 reports optimizer, learning rates, momentum, weight decay, epochs, batch
+size and input size. Other settings below are explicit YOLOv8 assumptions.
+`lrf=0.01` is interpreted as a final/initial ratio; the paper calls it "Final learning
+rate" without clarifying that convention. Early stopping is disabled to complete
+the reported 300 epochs. The schedule retains YOLOv8's linear default.
 
 | Hyperparameter | Value | Description |
 |:---|:---:|:---|
@@ -334,7 +342,7 @@ Evaluate a trained checkpoint or model architecture on the validation/test set:
 ```bash
 python val.py \
     --weights runs/train/paddy_yolo/weights/best.pt \
-    --data configs/r2000.yaml \
+    --data dataset/r2000/data_fold0.yaml \
     --imgsz 640 \
     --batch 32 \
     --split val \
@@ -468,7 +476,7 @@ python -m pytest -v
 - `test_rgg.py`: RGGConv, RGGBottleneck, RGG modules, residual shortcuts, and Ultralytics calling conventions.
 - `test_dimiou.py`: DIMIoU identical/shifted/disjoint boxes, dynamic Strategy H ratio curve ($0.5 \to 1.5$), strategies A-L, and corner penalties.
 - `test_loss_integration.py`: `PaddyBboxLoss`, `PaddyDetectionLoss`, and `PaddyTrainer` integration with Ultralytics.
-- `test_model_build.py`: Ultralytics YAML parsing, module auto-registration, parameter counts (~3.16M params), and multi-scale detection head shapes.
+- `test_model_build.py`: Ultralytics YAML parsing, module registration, parameter counts, multi-scale detection shapes, and deployment equivalence. The fused model has 3.3407M parameters.
 - `test_dataset_prep.py`: Kaggle R2000 Pascal VOC XML parsing, 5-fold cross validation split generation, and dummy dataset creation.
 - `test_scripts.py`: Top-level CLI scripts (`train.py`, `val.py`, `predict.py`, `verify_paddy_yolo.py`), argument parsing, missing weights validation, and synthetic execution.
 

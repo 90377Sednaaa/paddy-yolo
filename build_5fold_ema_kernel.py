@@ -15,7 +15,7 @@ with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         dirs[:] = [
             d for d in dirs
             if d not in [
-                ".git", "__pycache__", ".pytest_cache", ".superpowers",
+                ".git", ".venv", "__pycache__", ".pytest_cache", ".superpowers",
                 "docs", "runs", "data", "weights", "kaggle_kernel", "kaggle_paddy_kernel",
                 "kaggle_enhanced_kernel", "kaggle_ema_800_kernel",
                 "kaggle_residual_ema_kernel", "kaggle_5fold_ema_kernel", ".vscode", ".idea"
@@ -38,7 +38,7 @@ notebook = {
             "source": [
                 "# 🌾 Master 5-Fold Cross-Validation: Paddy-YOLO with Efficient Multi-Scale Attention (EMA)\n",
                 "\n",
-                "This notebook executes the **master 5-fold cross-validation benchmark** of **Paddy-YOLO-EMA** on the **R2000** rice pest benchmark (`dmrashidferrer/r2000v1-2024-images`).\n",
+                "This notebook executes the **master 5-fold cross-validation benchmark** of **Paddy-YOLO-EMA** on the **R2000** rice pest benchmark (`dmrashidpferrer/r2000-pestnet`).\n",
                 "\n",
                 "### Key Experimental Controls:\n",
                 "1. **Strict 1:1 Paper Fidelity**: 300 epochs, AdamW optimizer, cosine LR schedule, DIMIoU (Strategy H), batch 32, 640px.\n",
@@ -91,7 +91,7 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 3: Install Ultralytics and Run Sanity Verification\n",
-                "!pip install ultralytics -q\n",
+                "!pip install ultralytics==8.3.253 -q\n",
                 "!python verify_paddy_yolo.py --smoke-test\n"
             ]
         },
@@ -123,7 +123,7 @@ notebook = {
                 "        download_dir.mkdir(parents=True, exist_ok=True)\n",
                 "        subprocess.run([\n",
                 "            'kaggle', 'datasets', 'download',\n",
-                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '-d', 'dmrashidpferrer/r2000-pestnet',\n",
                 "            '--unzip', '-p', str(download_dir)\n",
                 "        ], check=True)\n",
                 "        raw_data_dir = download_dir\n",
@@ -385,7 +385,7 @@ metadata = {
     "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
-        "dmrashidferrer/r2000v1-2024-images"
+        "dmrashidpferrer/r2000-pestnet"
     ],
     "competition_sources": [],
     "kernel_sources": [

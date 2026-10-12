@@ -13,10 +13,10 @@ buf = io.BytesIO()
 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk("."):
         dirs[:] = [
-            d for d in dirs 
+            d for d in dirs
             if d not in [
-                ".git", "__pycache__", ".pytest_cache", ".superpowers", 
-                "docs", "runs", "data", "kaggle_kernel", "kaggle_paddy_kernel", 
+                ".git", ".venv", "__pycache__", ".pytest_cache", ".superpowers",
+                "docs", "runs", "data", "kaggle_kernel", "kaggle_paddy_kernel",
                 "kaggle_enhanced_kernel", ".vscode", ".idea"
             ]
         ]
@@ -37,7 +37,7 @@ notebook = {
             "source": [
                 "# 🌾 Proposed Enhanced Paddy-YOLO: EMA Attention + Class-Balanced Focal Loss + TTA\n",
                 "\n",
-                "This notebook trains and evaluates the enhanced **Paddy-YOLO-EMA** model with **Class-Balanced Focal Loss** and **Test-Time Augmentation (TTA)** on the **R2000** rice pest dataset (`dmrashidferrer/r2000v1-2024-images`).\n",
+                "This notebook trains and evaluates the enhanced **Paddy-YOLO-EMA** model with **Class-Balanced Focal Loss** and **Test-Time Augmentation (TTA)** on the **R2000** rice pest dataset (`dmrashidpferrer/r2000-pestnet`).\n",
                 "\n",
                 "### Architectural & Loss Innovations:\n",
                 "1. **Efficient Multi-Scale Attention (EMA, ICASSP 2023)**: 3 attention blocks before detection heads to filter leaf camouflage.\n",
@@ -90,7 +90,7 @@ notebook = {
             "outputs": [],
             "source": [
                 "# Cell 3: Install Ultralytics and Run Full Sanity Check\n",
-                "!pip install ultralytics -q\n",
+                "!pip install ultralytics==8.3.253 -q\n",
                 "!python verify_paddy_yolo.py --smoke-test\n"
             ]
         },
@@ -122,7 +122,7 @@ notebook = {
                 "        download_dir.mkdir(parents=True, exist_ok=True)\n",
                 "        subprocess.run([\n",
                 "            'kaggle', 'datasets', 'download',\n",
-                "            '-d', 'dmrashidferrer/r2000v1-2024-images',\n",
+                "            '-d', 'dmrashidpferrer/r2000-pestnet',\n",
                 "            '--unzip', '-p', str(download_dir)\n",
                 "        ], check=True)\n",
                 "        raw_data_dir = download_dir\n",
@@ -266,7 +266,7 @@ metadata = {
     "enable_tpu": "false",
     "enable_internet": "true",
     "dataset_sources": [
-        "dmrashidferrer/r2000v1-2024-images"
+        "dmrashidpferrer/r2000-pestnet"
     ],
     "competition_sources": [],
     "kernel_sources": [],
