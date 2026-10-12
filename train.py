@@ -230,9 +230,34 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
             from ultralytics import YOLO
             init_yolo = YOLO(chosen_model)
             init_yolo.load(args.weights)
+
+            # Transfer weights for shifted neck layers in attention-augmented models
+            model_stem = Path(chosen_model).stem
+            shift_maps = {
+                "paddy-yolo-ema": {16: 17, 18: 19, 19: 21, 21: 23},
+                "paddy-yolo-p2-ema": {16: 20, 18: 22, 19: 24, 21: 26},
+            }
+            if model_stem in shift_maps:
+                layer_map = shift_maps[model_stem]
+                src_ckpt = torch.load(args.weights, map_location="cpu", weights_only=False)
+                src_sd = src_ckpt["model"].state_dict() if isinstance(src_ckpt, dict) and "model" in src_ckpt else src_ckpt.state_dict()
+                tgt_sd = init_yolo.model.state_dict()
+                shifted_count = 0
+                for src_key, src_val in src_sd.items():
+                    if not src_key.startswith("model."):
+                        continue
+                    parts = src_key.split(".")
+                    src_idx = int(parts[1])
+                    if src_idx in layer_map:
+                        tgt_key = f"model.{layer_map[src_idx]}." + ".".join(parts[2:])
+                        if tgt_key in tgt_sd and tgt_sd[tgt_key].shape == src_val.shape:
+                            tgt_sd[tgt_key].copy_(src_val.float())
+                            shifted_count += 1
+                init_yolo.model.load_state_dict(tgt_sd)
+                print(f"Topological weight transfer: mapped {shifted_count} additional neck tensors for {model_stem}.")
+
             weights_dir = Path("weights")
             weights_dir.mkdir(parents=True, exist_ok=True)
-            model_stem = Path(chosen_model).stem
             init_path = weights_dir / f"{model_stem}_init.pt"
             torch.save({"model": init_yolo.model}, init_path)
             print(f"Initialized checkpoint created at: {init_path}")
