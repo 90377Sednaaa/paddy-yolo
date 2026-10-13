@@ -231,10 +231,13 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
             init_yolo = YOLO(chosen_model)
             init_yolo.load(args.weights)
 
-            # Transfer weights for shifted neck layers in attention-augmented models
+            # Transfer weights for shifted backbone and neck layers in attention-augmented models
             model_stem = Path(chosen_model).stem
             shift_maps = {
-                "paddy-yolo-ema": {16: 17, 18: 19, 19: 21, 21: 23},
+                "paddy-yolo-ema": {
+                    0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 6, 6: 7, 7: 9, 8: 10, 9: 12,
+                    12: 15, 15: 18, 16: 19, 18: 21, 19: 22, 21: 24, 22: 25,
+                },
                 "paddy-yolo-p2-ema": {16: 20, 18: 22, 19: 24, 21: 26},
             }
             if model_stem in shift_maps:

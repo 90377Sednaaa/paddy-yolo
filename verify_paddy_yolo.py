@@ -298,25 +298,41 @@ def verify_ema(device: str = "cpu") -> bool:
 
 
 def verify_enhanced_model(device: str = "cpu") -> bool:
-    """Verify Enhanced Paddy-YOLO (P2-EMA) 4-head architecture and forward anchors."""
-    print("  [8.1] Testing Enhanced Paddy-YOLO (P2-EMA) configuration parsing...")
+    """Verify Paddy-YOLO with Backbone EMA (3-head) and P2-EMA (4-head) architectures."""
+    print("  [8.1] Testing Paddy-YOLO-EMA (Backbone EMA) configuration parsing...")
     register_paddy_modules()
-    cfg_path = "configs/paddy-yolo-p2-ema.yaml"
-    assert Path(cfg_path).is_file(), f"{cfg_path} not found"
+    ema_cfg = "configs/paddy-yolo-ema.yaml"
+    assert Path(ema_cfg).is_file(), f"{ema_cfg} not found"
 
-    model = YOLO(cfg_path).model.to(device)
-    param_count = sum(p.numel() for p in model.parameters())
-    print(f"  [8.2] Enhanced model parameter count: {param_count:,} parameters")
-    assert 3_000_000 < param_count < 3_600_000, f"Unexpected parameter count: {param_count}"
+    model_ema = YOLO(ema_cfg).model.to(device)
+    ema_param_count = sum(p.numel() for p in model_ema.parameters())
+    print(f"  [8.2] Backbone-EMA parameter count: {ema_param_count:,} parameters")
+    assert 3_300_000 < ema_param_count < 3_450_000, f"Unexpected parameter count: {ema_param_count}"
 
-    print("  [8.3] Testing 4-head forward pass with 34,000 anchor points...")
-    model.eval()
+    print("  [8.3] Testing Backbone-EMA 3-head forward pass with 8,400 anchor points...")
+    model_ema.eval()
     x = torch.randn(1, 3, 640, 640, device=device)
     with torch.no_grad():
-        preds = model(x)
-    assert isinstance(preds, tuple), "Predictions must be a tuple"
-    assert preds[0].shape == (1, 20, 34000), f"Expected (1, 20, 34000), got {preds[0].shape}"
-    print("  [PASSED] Enhanced Paddy-YOLO 4-head P2-EMA architecture confirmed.")
+        preds_ema = model_ema(x)
+    assert isinstance(preds_ema, tuple), "Predictions must be a tuple"
+    assert preds_ema[0].shape == (1, 20, 8400), f"Expected (1, 20, 8400), got {preds_ema[0].shape}"
+
+    print("  [8.4] Testing Enhanced Paddy-YOLO (P2-EMA) configuration parsing...")
+    p2_cfg = "configs/paddy-yolo-p2-ema.yaml"
+    assert Path(p2_cfg).is_file(), f"{p2_cfg} not found"
+
+    model_p2 = YOLO(p2_cfg).model.to(device)
+    p2_param_count = sum(p.numel() for p in model_p2.parameters())
+    print(f"  [8.5] P2-EMA parameter count: {p2_param_count:,} parameters")
+    assert 3_000_000 < p2_param_count < 3_600_000, f"Unexpected parameter count: {p2_param_count}"
+
+    print("  [8.6] Testing 4-head forward pass with 34,000 anchor points...")
+    model_p2.eval()
+    with torch.no_grad():
+        preds_p2 = model_p2(x)
+    assert isinstance(preds_p2, tuple), "Predictions must be a tuple"
+    assert preds_p2[0].shape == (1, 20, 34000), f"Expected (1, 20, 34000), got {preds_p2[0].shape}"
+    print("  [PASSED] Paddy-YOLO-EMA (Backbone EMA) and P2-EMA architectures confirmed.")
     return True
 
 

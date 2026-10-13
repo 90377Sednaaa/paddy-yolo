@@ -55,3 +55,37 @@ def test_paddy_yolo_ema_forward_anchors():
     pred_boxes = preds[0]
     # Standard 3 heads: 80x80 + 40x40 + 20x20 = 6400 + 1600 + 400 = 8400
     assert pred_boxes.shape == (1, 20, 8400), f"Expected (1, 20, 8400), got {pred_boxes.shape}"
+
+
+def test_topological_weight_transfer_ema():
+    """Verify that yolov8n.pt pretrained weights transfer topologically into backbone EMA."""
+    weights_path = Path("yolov8n.pt")
+    if not weights_path.exists():
+        return  # Skip if weight file is missing in test environment
+
+    register_paddy_modules()
+    model = YOLO("configs/paddy-yolo-ema.yaml")
+    init_sd = model.model.state_dict()
+
+    src_ckpt = torch.load(weights_path, map_location="cpu", weights_only=False)
+    src_sd = src_ckpt["model"].state_dict() if isinstance(src_ckpt, dict) and "model" in src_ckpt else src_ckpt.state_dict()
+
+    shift_maps = {
+        0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 6, 6: 7, 7: 9, 8: 10, 9: 12,
+        12: 15, 15: 18, 16: 19, 18: 21, 19: 22, 21: 24, 22: 25,
+    }
+
+    transferred = 0
+    for src_k, src_v in src_sd.items():
+        if not src_k.startswith("model."):
+            continue
+        parts = src_k.split(".")
+        src_idx = int(parts[1])
+        if src_idx in shift_maps:
+            tgt_idx = shift_maps[src_idx]
+            tgt_k = f"model.{tgt_idx}." + ".".join(parts[2:])
+            if tgt_k in init_sd and init_sd[tgt_k].shape == src_v.shape:
+                transferred += 1
+
+    assert transferred >= 280, f"Expected at least 280 transferred tensors, got {transferred}"
+

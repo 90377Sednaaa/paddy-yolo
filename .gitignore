@@ -12,7 +12,8 @@ runs/
 # Ignore all files in data by default
 data/**
 !data/**/
-# Allow ONLY results CSV files and model weights in EMA experiment folders
+# Allow results CSV files in baseline and EMA experiment folders
+!data/kaggle_baseline_5fold_results/**/*.csv
 !data/kaggle_ema_*_results/**/*.csv
 !data/kaggle_ema_*_results/**/*.pt
 
@@ -23,7 +24,7 @@ kaggle_ema_800_kernel/
 kaggle_*_kernel/
 scratch/
 scratch*
-*.pdf
+!*.pdf
 *.png
 *.jpg
 .superpowers/
