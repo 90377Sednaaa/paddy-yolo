@@ -22,6 +22,7 @@ import ultralytics.nn.modules as ultralytics_modules
 import ultralytics.nn.modules.block as ultralytics_block
 import ultralytics.nn.tasks as ultralytics_tasks
 
+from paddy_yolo.modules.dysample import DySample
 from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.repconv import RepConv
 from paddy_yolo.modules.rgg import RGG, RGGBottleneck, RGGConv
@@ -33,6 +34,7 @@ CUSTOM_MODULES: Dict[str, Type[nn.Module]] = {
     "RGGConv": RGGConv,
     "RepConv": RepConv,
     "GhostConv": GhostConv,
+    "DySample": DySample,
 }
 
 _PADDY_MODULES_REGISTERED = False
@@ -173,7 +175,11 @@ def _build_fallback_parse_model():
                     legacy = False
                     if scale in "mlx":
                         args[3] = True
-            elif m is getattr(ultralytics_tasks, "AIFI", None):
+            elif m in {
+                getattr(ultralytics_tasks, "AIFI", None),
+                DySample,
+                getattr(ultralytics_tasks, "DySample", None),
+            }:
                 args = [ch[f], *args]
                 c2 = ch[f]
             elif m in {
@@ -289,6 +295,17 @@ def register_paddy_modules() -> None:
         src = inspect.getsource(ultralytics_tasks.parse_model)
         if "RGG" not in src and "C2f," in src:
             new_src = src.replace("C2f,", "C2f,\n            RGG,")
+            if "m is AIFI:" in new_src:
+                new_src = new_src.replace("m is AIFI:", "m in (AIFI, DySample):")
+            local_ns: dict = {}
+            exec(new_src, ultralytics_tasks.__dict__, local_ns)
+            new_parse_model = local_ns["parse_model"]
+            new_parse_model._is_paddy_patched = True
+            ultralytics_tasks.parse_model = new_parse_model
+            ultralytics_nn.parse_model = new_parse_model
+            patched = True
+        elif "RGG" in src and "DySample" not in src and "m is AIFI:" in src:
+            new_src = src.replace("m is AIFI:", "m in (AIFI, DySample):")
             local_ns: dict = {}
             exec(new_src, ultralytics_tasks.__dict__, local_ns)
             new_parse_model = local_ns["parse_model"]
