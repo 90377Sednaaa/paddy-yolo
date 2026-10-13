@@ -1,0 +1,49 @@
+# Paddy-YOLO-DySample+ Architecture Configuration
+# Reference: Zheng et al., "Paddy-YOLO: An accurate method for rice pest detection",
+# Computers and Electronics in Agriculture 238 (2025) 110777.
+#
+# Modifications vs standard YOLOv8-N:
+# 1. 4 C2f modules in the backbone (layers 2, 4, 6, 8) replaced by RGG modules.
+# 2. The two neck upsampling layers use original DySample (lp, scale=2, groups=4, dyscope=True).
+# 3. nc: 16 (16 rice pest classes).
+
+# Parameters
+nc: 16 # number of classes
+scale: n
+scales: # model compound scaling constants
+  # [depth, width, max_channels]
+  n: [0.33, 0.25, 1024]
+
+# Paddy-YOLO backbone
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
+  - [-1, 3, RGG, [128, True]] # 2 (replaces C2f)
+  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
+  - [-1, 6, RGG, [256, True]] # 4 (replaces C2f)
+  - [-1, 1, Conv, [512, 3, 2]] # 5-P4/16
+  - [-1, 6, RGG, [512, True]] # 6 (replaces C2f)
+  - [-1, 1, Conv, [1024, 3, 2]] # 7-P5/32
+  - [-1, 3, RGG, [1024, True]] # 8 (replaces C2f)
+  - [-1, 1, SPPF, [1024, 5]] # 9
+
+# Paddy-YOLO head
+head:
+  - [-1, 1, DySample, [2, "lp", 4, True]] # 10
+  - [[-1, 6], 1, Concat, [1]] # 11: cat backbone P4
+  - [-1, 3, C2f, [512]] # 12
+
+  - [-1, 1, DySample, [2, "lp", 4, True]] # 13
+  - [[-1, 4], 1, Concat, [1]] # 14: cat backbone P3
+  - [-1, 3, C2f, [256]] # 15 (P3/8-small)
+
+  - [-1, 1, Conv, [256, 3, 2]] # 16
+  - [[-1, 12], 1, Concat, [1]] # 17: cat head P4
+  - [-1, 3, C2f, [512]] # 18 (P4/16-medium)
+
+  - [-1, 1, Conv, [512, 3, 2]] # 19
+  - [[-1, 9], 1, Concat, [1]] # 20: cat head P5
+  - [-1, 3, C2f, [1024]] # 21 (P5/32-large)
+
+  - [[15, 18, 21], 1, Detect, [nc]] # 22: Detect(P3, P4, P5)

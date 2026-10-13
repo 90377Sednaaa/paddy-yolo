@@ -144,6 +144,18 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         help="Resume training from most recent checkpoint",
     )
     parser.add_argument(
+        "--resume-from",
+        type=str,
+        default=None,
+        help="Resume from an explicit last.pt checkpoint mounted in this session",
+    )
+    parser.add_argument(
+        "--save-period",
+        type=int,
+        default=None,
+        help="Save an additional checkpoint every N epochs (default: Ultralytics setting)",
+    )
+    parser.add_argument(
         "--no-plots",
         action="store_false",
         dest="plots",
@@ -176,6 +188,18 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
+def resolve_resume_checkpoint(initial_weights: Optional[str], resume_from: Optional[str]) -> Optional[str]:
+    """Select a complete training checkpoint instead of initial pretrained weights."""
+    if not resume_from:
+        return None
+    if initial_weights:
+        raise ValueError("Do not supply initial weights when resuming from a training checkpoint")
+    checkpoint = Path(resume_from).resolve()
+    if not checkpoint.is_file():
+        raise FileNotFoundError(f"Resume checkpoint not found: {checkpoint}")
+    return str(checkpoint)
+
+
 def resolve_data_config(data: str, fold: Optional[int] = None) -> str:
     """Resolve data YAML path, accounting for 5-fold cross validation if requested."""
     if fold is not None:
@@ -189,6 +213,28 @@ def resolve_data_config(data: str, fold: Optional[int] = None) -> str:
                 return str(candidate.resolve())
         raise FileNotFoundError(f"No prepared data_fold{fold}.yaml found; run dataset preparation first")
     return data
+
+
+def initialize_pretrained_model(config: str, weights: str, seed: int = 42):
+    """Transfer compatible weights, including the shifted EMA detection layer."""
+    from ultralytics import YOLO
+    from ultralytics.utils.torch_utils import init_seeds
+
+    init_seeds(seed, deterministic=True)
+    target = YOLO(config)
+    if Path(config).stem != "Paddy-YOLO-EMA-Heads":
+        return target.load(weights)
+    source = YOLO(weights)
+    target.model.load(source.model)
+    # Layers 0 through 21 retain their baseline indices. EMA adds 22-24,
+    # moving Detect from 22 to 25; copy its compatible tensors by local name.
+    target_head = target.model.model[-1]
+    target_state = target_head.state_dict()
+    compatible = {key: value for key, value in source.model.model[-1].float().state_dict().items()
+                  if key in target_state and value.shape == target_state[key].shape}
+    target_head.load_state_dict(compatible, strict=False)
+    print(f"Transferred {len(compatible)} compatible detection tensors to EMA head layer 25", flush=True)
+    return target
 
 
 def train(args: argparse.Namespace) -> PaddyTrainer:
@@ -225,16 +271,17 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     default_model = "yolov8n.yaml" if args.baseline else "configs/paddy-yolo.yaml"
     chosen_model = args.model if args.model != "configs/paddy-yolo.yaml" or not args.baseline else default_model
 
-    if not args.baseline and args.weights:
+    resume_checkpoint = resolve_resume_checkpoint(args.weights, args.resume_from)
+    if resume_checkpoint:
+        model_path = resume_checkpoint
+    elif not args.baseline and args.weights:
         weights_path = Path(args.weights)
         if (
             weights_path.name in ["yolov8n.pt", "yolov8s.pt", "yolov8m.pt"]
             or "yolov8" in weights_path.name
         ) and "paddy" not in weights_path.name:
             print(f"Initializing Paddy-YOLO architecture from {chosen_model} and transferring weights from {args.weights}...")
-            from ultralytics import YOLO
-            init_yolo = YOLO(chosen_model)
-            init_yolo.load(args.weights)
+            init_yolo = initialize_pretrained_model(chosen_model, args.weights, seed=args.seed)
             weights_dir = Path("weights")
             weights_dir.mkdir(parents=True, exist_ok=True)
             model_stem = Path(chosen_model).stem
@@ -267,7 +314,7 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         "name": experiment_name,
         "workers": workers,
         "seed": args.seed,
-        "resume": args.resume,
+        "resume": resume_checkpoint or args.resume,
         "plots": args.plots,
         "val": args.val,
         "save": args.save,
@@ -287,6 +334,10 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         overrides["copy_paste"] = args.copy_paste
     if args.cache is not None:
         overrides["cache"] = True if args.cache.lower() in ("true", "ram") else args.cache
+    if args.save_period is not None:
+        if args.save_period < 1:
+            raise ValueError("--save-period must be a positive integer")
+        overrides["save_period"] = args.save_period
 
     title = "Baseline YOLOv8-N" if args.baseline else "Paddy-YOLO"
     print("=" * 60)

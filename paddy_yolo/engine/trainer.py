@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import torch
 from ultralytics.cfg import DEFAULT_CFG
 from ultralytics.models.yolo.detect import DetectionTrainer
+from ultralytics.utils.torch_utils import unwrap_model
 
 from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
 from paddy_yolo.modules.register import register_paddy_modules
@@ -123,11 +124,12 @@ class PaddyTrainer(BaselineTrainer):
 
         # Configure trainer model
         if hasattr(self, "model") and self.model is not None:
-            self.model.init_criterion = PaddyCriterionInitializer(
-                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
+            model = unwrap_model(self.model)
+            model.init_criterion = PaddyCriterionInitializer(
+                model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
-            self.model.criterion = PaddyDetectionLoss(
-                self.model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
+            model.criterion = PaddyDetectionLoss(
+                model, strategy=strategy, focal_gamma=focal_gamma, focal_alpha=focal_alpha, fixed_ratio=getattr(self, "fixed_ratio", None)
             )
 
         # Configure EMA model if present

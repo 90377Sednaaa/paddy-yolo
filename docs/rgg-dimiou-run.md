@@ -45,4 +45,41 @@ Build it using:
 Outputs go to `rgg_dimiou_results/`, including explicit architecture/loss metadata,
 all five checkpoints, per-fold test metrics and the mean/sample standard deviation.
 
-Version 1 was successfully submitted and the Kaggle API confirmed RUNNING on October 12, 2026. Final fivefold metrics are pending.
+Version 1 completed on October 12, 2026. The outputs are downloaded under
+`data/rgg_dimiou_results_download/rgg_dimiou_results/` (Git-ignored), including
+`fivefold_summary.json`, `individual_folds.csv`, five per-fold test-metric files,
+five training histories and best/last checkpoints for every fold.
+
+## Held-out test results
+
+These are means and sample standard deviations across the five **test** folds;
+the paper values are the reported final Paddy-YOLO values from Tables 8/13.
+
+| Metric | This run, mean ± sample SD | Paper | Difference |
+| --- | ---: | ---: | ---: |
+| Precision | 51.81% ± 2.29 pp | 73.1% | −21.29 pp |
+| Recall | 53.34% ± 1.60 pp | 63.0% | −9.66 pp |
+| F1 | 52.52% ± 1.06 pp | 67.7% | −15.18 pp |
+| mAP@50 | 54.39% ± 1.44 pp | 70.2% | −15.81 pp |
+| mAP@50:95 | 38.66% ± 1.40 pp | 51.5% | −12.84 pp |
+
+| Fold | mAP@50 | mAP@50:95 |
+| ---: | ---: | ---: |
+| 0 | 54.55% | 38.15% |
+| 1 | 53.06% | 37.32% |
+| 2 | 54.44% | 38.48% |
+| 3 | 56.68% | 41.04% |
+| 4 | 53.24% | 38.32% |
+
+The manifest reports all five folds complete, 2,024 images, 2,281 boxes,
+four sequential RGG stages, DIMIoU Strategy H, and random initialization.
+Each per-fold test file covers 16 classes. All five `results.csv` histories have
+exactly 300 sequential epochs with finite recorded values. The downloaded
+best and last checkpoints for every fold passed ZIP integrity checks. Summary
+means and sample standard deviations independently recomputed from
+`individual_folds.csv` match `fivefold_summary.json`.
+
+This run falls short of the paper's reported accuracy. The downloaded files
+confirm the measurements and run settings; they do not identify the cause of
+the accuracy gap. The paper's exact fold membership and several architecture
+and loss details remain uncertain, as described in the replication audit.

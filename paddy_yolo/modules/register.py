@@ -23,6 +23,7 @@ import ultralytics.nn.modules.block as ultralytics_block
 import ultralytics.nn.tasks as ultralytics_tasks
 
 from paddy_yolo.modules.ema import EMA
+from paddy_yolo.modules.dysample import DySample
 from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.repconv import RepConv
 from paddy_yolo.modules.rgg import RGG, RGGBottleneck, RGGConv
@@ -35,6 +36,7 @@ CUSTOM_MODULES: Dict[str, Type[nn.Module]] = {
     "RepConv": RepConv,
     "GhostConv": GhostConv,
     "EMA": EMA,
+    "DySample": DySample,
 }
 
 _PADDY_MODULES_REGISTERED = False
@@ -175,7 +177,7 @@ def _build_fallback_parse_model():
                     legacy = False
                     if scale in "mlx":
                         args[3] = True
-            elif m in {getattr(ultralytics_tasks, "AIFI", None), EMA, getattr(ultralytics_tasks, "EMA", None)}:
+            elif m in {getattr(ultralytics_tasks, "AIFI", None), EMA, DySample, getattr(ultralytics_tasks, "EMA", None)}:
                 args = [ch[f], *args]
                 c2 = ch[f]
             elif m in {
@@ -293,8 +295,8 @@ def register_paddy_modules() -> None:
             new_src = src.replace("C2f,", "C2f,\n            RGG,")
             if "elif m is AIFI:" in new_src:
                 new_src = new_src.replace(
-                    "elif m is AIFI:",
-                    "elif m in {AIFI, EMA}:",
+                    "elif m is AIFI:\n            args = [ch[f], *args]",
+                    "elif m in {AIFI, EMA, DySample}:\n            c2 = ch[f]\n            args = [c2, *args]",
                 )
             local_ns: dict = {}
             exec(new_src, ultralytics_tasks.__dict__, local_ns)

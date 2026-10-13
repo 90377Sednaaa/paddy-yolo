@@ -5,7 +5,7 @@ import runpy
 from pathlib import Path
 
 
-def build(owner, slug="paddy-yolo-baseline-fivefold-r2000-20261011", experiment="baseline"):
+def build(owner, slug="paddy-yolo-baseline-fivefold-r2000-20261011", experiment="baseline", weights=None):
     runpy.run_path("build_kaggle_kernel.py")
     out = Path("kaggle_kernel")
     old = json.loads((out / "paddy_yolo_baseline_training.ipynb").read_text(encoding="utf-8"))
@@ -58,6 +58,15 @@ subprocess.run([sys.executable, 'run_baseline_crossval.py', '--raw-data', str(co
             "Comparison: Tables 8 and 13 final Paddy-YOLO, mAP50 70.2%, mAP50:95 51.5%.\n",
             "Runtime preflight checks four RGG blocks, Strategy H, and absence of a fixed ratio.\n",
         ]
+    if weights:
+        source = "".join(old["cells"][1]["source"])
+        # Append the checkpoint only to the runner command, after its experiment selection.
+        position = source.rfind("], check=True)")
+        source = source[:position] + f", '--weights', {weights!r}" + source[position:]
+        old["cells"][1]["source"] = source.splitlines(keepends=True)
+        old["cells"][0]["source"] = [line.replace("random initialization", f"pretrained initialization from {weights}")
+                                             for line in old["cells"][0]["source"]]
+        old["cells"][0]["source"].append("Compatible YOLOv8-N layers receive pretrained weights; custom RGG layers are trained for R2000.\n")
     filename = "baseline_fivefold.ipynb"
     (out / filename).write_text(json.dumps(old, indent=2), encoding="utf-8")
     meta = json.loads((out / "kernel-metadata.json").read_text())
@@ -72,5 +81,6 @@ if __name__ == "__main__":
     parser.add_argument("--owner", required=True)
     parser.add_argument("--slug", default="paddy-yolo-baseline-fivefold-r2000-20261011")
     parser.add_argument("--experiment", choices=["baseline", "rgg-impdiou", "rgg-dimiou"], default="baseline")
+    parser.add_argument("--weights", default=None, help="Optional pretrained initialization checkpoint, e.g. yolov8n.pt")
     args = parser.parse_args()
-    build(args.owner, args.slug, args.experiment)
+    build(args.owner, args.slug, args.experiment, args.weights)

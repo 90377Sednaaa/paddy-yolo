@@ -31,6 +31,10 @@ def require_finite_epoch(trainer):
     """Fail rather than silently complete a replication with NaN/Inf losses."""
     if trainer.tloss is not None and not torch.isfinite(trainer.tloss).all():
         raise FloatingPointError(f"Non-finite training loss at epoch {trainer.epoch + 1}")
+    # Ultralytics aggregates validation metrics on rank 0 only. Other DDP
+    # workers still run this callback, with metrics=None after validation.
+    if trainer.metrics is None:
+        return
     bad = {key: value for key, value in trainer.metrics.items()
            if not math.isfinite(float(value))}
     if bad:

@@ -161,6 +161,41 @@ Experiment/
 
 ## Installation and Environment
 
+### Run on Kaggle
+
+For a quick GPU setup test, import the prepared
+`kaggle_kernel/paddy_yolo_kaggle_test.ipynb` into Kaggle. Enable a **GPU**
+accelerator and **Internet** in notebook settings, then run all cells.
+No dataset attachment is needed for this test: it runs the project's eight
+verification checks, including one training epoch on synthetic images.
+This checks software execution, not rice-pest detection accuracy.
+
+For the full standard Paddy-YOLO experiment, generate a self-contained notebook
+from the current source using Python (no local ML dependencies required):
+
+```powershell
+python build_baseline_crossval_kernel.py --owner YOUR_KAGGLE_USERNAME --slug paddy-yolo-rgg-dimiou-fivefold --experiment rgg-dimiou
+```
+
+Import `kaggle_kernel/baseline_fivefold.ipynb` into Kaggle. Despite its filename,
+the `--experiment rgg-dimiou` option configures **Paddy-YOLO with four RGG stages
+and DIMIoU Strategy H**. Attach the
+[R2000 dataset](https://www.kaggle.com/datasets/dmrashidpferrer/r2000-pestnet),
+enable GPU and Internet, then run all cells. This trains **five folds at 300
+epochs each**, with random initialization, batch 32 and 640-pixel inputs.
+Results and checkpoints are saved under `/kaggle/working/rgg_dimiou_results/`.
+See [the experiment notes](docs/rgg-dimiou-run.md) for output details and
+[Kaggle's notebook documentation](https://www.kaggle.com/docs/notebooks) for
+notebook settings. The generated files embed the project source; rebuild the
+full notebook after changing the model code. Generated notebooks are Git-ignored.
+
+To initialize each fold from COCO-pretrained YOLOv8-N weights, add
+`--weights yolov8n.pt` to the builder command. This transfers compatible layers
+into the Paddy-YOLO architecture. See [the pretrained run notes](docs/pretrained-rgg-dimiou-run.md)
+for the submitted experiment and its runtime checks.
+
+For the separate DySample neck experiment, see [Paddy-YOLO-DySample preflight](docs/dysample-experiment.md). Its private Kaggle notebook validates both the original and proposed architectures with `yolov8n.pt` before any full R2000 training; training is disabled by default.
+
 ### Prerequisites
 
 - Python 3.9, 3.10, 3.11, 3.12, or 3.13

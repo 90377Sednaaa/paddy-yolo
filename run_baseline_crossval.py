@@ -1,4 +1,4 @@
-"""Train YOLOv8-N from scratch and evaluate all five R2000 test folds."""
+"""Train baseline or Paddy-YOLO and evaluate all five R2000 test folds."""
 
 import argparse
 import csv
@@ -32,7 +32,23 @@ def check_training_history(path, expected_epochs=300):
     return {"epochs": len(rows), "all_values_finite": True}
 
 
-def run(raw_data, output, experiment="baseline"):
+def training_command(data_yaml, output, run_name, fold, experiment, weights=None):
+    command = [sys.executable, "train.py", "--data", str(data_yaml),
+               "--hyp", "configs/hyp_paper.yaml", "--epochs", "300", "--batch", "32",
+               "--imgsz", "640", "--device", "0", "--seed", "42", "--workers", "2",
+               "--project", str(Path(output) / "train"), "--name", f"{run_name}_fold{fold}"]
+    if experiment == "rgg-impdiou":
+        command += ["--model", "configs/paddy-yolo.yaml", "--impdiou", "--inner-ratio", "1.3"]
+    elif experiment == "rgg-dimiou":
+        command += ["--model", "configs/paddy-yolo.yaml", "--strategy", "H"]
+    else:
+        command.append("--baseline")
+    if weights:
+        command += ["--weights", str(weights)]
+    return command
+
+
+def run(raw_data, output, experiment="baseline", weights=None):
     if not torch.cuda.is_available():
         raise RuntimeError("Baseline replication requires a CUDA GPU")
     output = Path(output).resolve()
@@ -65,6 +81,8 @@ def run(raw_data, output, experiment="baseline"):
             )).encode()).hexdigest() for role in ("train", "val", "test")} for i in range(5)
         },
     }
+    if weights:
+        manifest.update(initialization=f"transfer from pretrained {weights}", pretrained_checkpoint=str(weights))
     if is_paddy:
         manifest.update(model="Paddy-YOLO RGG backbone", box_loss="IMPDIoU",
                         fixed_ratio=1.3, criterion="PaddyDetectionLoss / PaddyBboxLoss",
@@ -88,6 +106,17 @@ def run(raw_data, output, experiment="baseline"):
         assert criterion.bbox_loss.fixed_ratio == trainer.fixed_ratio
         assert criterion.bbox_loss.strategy == "H"
         manifest["criterion_preflight_verified"] = True
+        if weights:
+            pretrained = YOLO(weights)
+            model.load(pretrained.model)
+            first_conv = "model.0.conv.weight"
+            assert torch.equal(model.state_dict()[first_conv], pretrained.model.state_dict()[first_conv]), (
+                "Pretrained first-convolution weights were not transferred"
+            )
+            manifest["pretrained_transfer_preflight_verified"] = True
+            manifest["pretrained_checkpoint_sha256"] = hashlib.sha256(Path(weights).read_bytes()).hexdigest()
+            print(f"Verified pretrained transfer from {weights} into Paddy-YOLO", flush=True)
+            del pretrained
         del model, criterion, trainer
     progress = output / "run_manifest.json"
     rows = []
@@ -96,16 +125,7 @@ def run(raw_data, output, experiment="baseline"):
             manifest["current_fold"] = fold
             progress.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
             print(f"Starting {run_name} fold {fold}: 300 epochs", flush=True)
-            command = [sys.executable, "train.py", "--data", data_yaml,
-                       "--hyp", "configs/hyp_paper.yaml", "--epochs", "300", "--batch", "32",
-                       "--imgsz", "640", "--device", "0", "--seed", "42", "--workers", "2",
-                       "--project", str(output / "train"), "--name", f"{run_name}_fold{fold}"]
-            if is_impdiou:
-                command += ["--model", "configs/paddy-yolo.yaml", "--impdiou", "--inner-ratio", "1.3"]
-            elif is_dimiou:
-                command += ["--model", "configs/paddy-yolo.yaml", "--strategy", "H"]
-            else:
-                command.append("--baseline")
+            command = training_command(data_yaml, output, run_name, fold, experiment, weights)
             with (output / f"fold{fold}_training.log").open("w", encoding="utf-8") as log:
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            text=True, encoding="utf-8", errors="replace")
@@ -115,9 +135,9 @@ def run(raw_data, output, experiment="baseline"):
                     print(line, end="", flush=True)
                 if process.wait() != 0:
                     raise RuntimeError(f"Fold {fold} failed; see its training log")
-            weights = output / "train" / f"{run_name}_fold{fold}" / "weights/best.pt"
-            history = check_training_history(weights.parent.parent / "results.csv")
-            model = YOLO(str(weights))
+            best_weights = output / "train" / f"{run_name}_fold{fold}" / "weights/best.pt"
+            history = check_training_history(best_weights.parent.parent / "results.csv")
+            model = YOLO(str(best_weights))
             metrics = model.val(data=data_yaml, split="test", imgsz=640, batch=32, device="0",
                                 project=str(output / "test"), name=f"fold{fold}", plots=True)
             p, r = float(metrics.box.mp), float(metrics.box.mr)
@@ -157,5 +177,6 @@ if __name__ == "__main__":
     parser.add_argument("--raw-data", required=True)
     parser.add_argument("--output", default="runs/baseline_crossval")
     parser.add_argument("--experiment", choices=["baseline", "rgg-impdiou", "rgg-dimiou"], default="baseline")
+    parser.add_argument("--weights", default=None, help="Optional pretrained initialization checkpoint, e.g. yolov8n.pt")
     args = parser.parse_args()
-    run(args.raw_data, args.output, args.experiment)
+    run(args.raw_data, args.output, args.experiment, args.weights)

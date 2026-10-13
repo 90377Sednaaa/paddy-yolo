@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1320" viewBox="0 0 1180 1320">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#557a36" /></marker></defs>
+<rect width="1180" height="1320" fill="white" />
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#1f2937">
+<text x="590" y="38" font-size="25" font-weight="bold">Paddy-YOLO: DySample on P4 to P3 only</text>
+<text x="590" y="68" font-size="15">dmrashidferrer | R2000 fold 0 | 640 x 640 input | 16 pest classes</text>
+<text x="115" y="110" font-size="18" font-weight="bold">RGG backbone</text>
+<text x="435" y="110" font-size="18" font-weight="bold">Top-down neck</text>
+<text x="750" y="110" font-size="18" font-weight="bold">Bottom-up neck</text>
+<text x="1050" y="110" font-size="18" font-weight="bold">Detection scales</text>
+</g>
+<polyline points="115,243 115,267" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,267.0 111.0,258.0 119.0,258.0" fill="#557a36" /><polyline points="115,323 115,347" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,347.0 111.0,338.0 119.0,338.0" fill="#557a36" /><polyline points="115,403 115,407" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,407.0 111.0,398.0 119.0,398.0" fill="#557a36" /><polyline points="115,463 115,477" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,477.0 111.0,468.0 119.0,468.0" fill="#557a36" /><polyline points="115,533 115,577" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,577.0 111.0,568.0 119.0,568.0" fill="#557a36" /><polyline points="115,633 115,697" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,697.0 111.0,688.0 119.0,688.0" fill="#557a36" /><polyline points="115,753 115,797" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,797.0 111.0,788.0 119.0,788.0" fill="#557a36" /><polyline points="115,853 115,897" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,897.0 111.0,888.0 119.0,888.0" fill="#557a36" /><polyline points="115,953 115,997" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,997.0 111.0,988.0 119.0,988.0" fill="#557a36" /><polyline points="115,173 115,187" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="115.0,187.0 111.0,178.0 119.0,178.0" fill="#557a36" /><polyline points="200,1025 435,1025 435,953" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,953.0 439.0,962.0 431.0,962.0" fill="#557a36" /><polyline points="435,897 435,833" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,833.0 439.0,842.0 431.0,842.0" fill="#557a36" /><polyline points="435,777 435,753" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,753.0 439.0,762.0 431.0,762.0" fill="#557a36" /><polyline points="435,697 435,653" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,653.0 439.0,662.0 431.0,662.0" fill="#557a36" /><polyline points="435,597 435,573" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,573.0 439.0,582.0 431.0,582.0" fill="#557a36" /><polyline points="435,517 435,473" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="435.0,473.0 439.0,482.0 431.0,482.0" fill="#557a36" /><polyline points="200,725 275,725 275,805 350,805" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="350.0,805.0 341.0,809.0 341.0,801.0" fill="#557a36" /><polyline points="200,505 300,505 300,545 350,545" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="350.0,545.0 341.0,549.0 341.0,541.0" fill="#557a36" /><polyline points="520,445 750,445 750,537" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,537.0 746.0,528.0 754.0,528.0" fill="#557a36" /><polyline points="750,593 750,697" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,697.0 746.0,688.0 754.0,688.0" fill="#557a36" /><polyline points="750,753 750,777" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,777.0 746.0,768.0 754.0,768.0" fill="#557a36" /><polyline points="750,833 750,897" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,897.0 746.0,888.0 754.0,888.0" fill="#557a36" /><polyline points="750,953 750,997" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,997.0 746.0,988.0 754.0,988.0" fill="#557a36" /><polyline points="750,1053 750,1097" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="750.0,1097.0 746.0,1088.0 754.0,1088.0" fill="#557a36" /><polyline points="520,725 665,725" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="665.0,725.0 656.0,729.0 656.0,721.0" fill="#557a36" /><polyline points="200,1025 275,1025 275,1205 615,1205 615,1025 665,1025" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="665.0,1025.0 656.0,1029.0 656.0,1021.0" fill="#557a36" /><polyline points="520,445 965,445" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="965.0,445.0 956.0,449.0 956.0,441.0" fill="#557a36" /><polyline points="835,805 965,805" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="965.0,805.0 956.0,809.0 956.0,801.0" fill="#557a36" /><polyline points="835,1125 965,1125" fill="none" stroke="#557a36" stroke-width="2" />
+<polygon points="965.0,1125.0 956.0,1129.0 956.0,1121.0" fill="#557a36" /><rect x="30.0" y="187.0" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="210.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">0: Conv</text>
+<text x="115" y="231.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">16 ch | 320 x 320</text>
+<rect x="30.0" y="267.0" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="290.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">1: Conv</text>
+<text x="115" y="311.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">32 ch | 160 x 160</text>
+<rect x="30.0" y="347.0" width="170" height="56" rx="12" fill="#e9ddf5" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="370.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">2: RGG</text>
+<text x="115" y="391.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">32 ch | 160 x 160</text>
+<rect x="30.0" y="407.0" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="430.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">3: Conv</text>
+<text x="115" y="451.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">64 ch | 80 x 80</text>
+<rect x="30.0" y="477" width="170" height="56" rx="12" fill="#e9ddf5" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="500" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">4: RGG</text>
+<text x="115" y="521" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">64 ch | 80 x 80</text>
+<rect x="30.0" y="577" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="600" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">5: Conv</text>
+<text x="115" y="621" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 40 x 40</text>
+<rect x="30.0" y="697" width="170" height="56" rx="12" fill="#e9ddf5" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="720" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">6: RGG</text>
+<text x="115" y="741" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 40 x 40</text>
+<rect x="30.0" y="797" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="820" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">7: Conv</text>
+<text x="115" y="841" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">256 ch | 20 x 20</text>
+<rect x="30.0" y="897" width="170" height="56" rx="12" fill="#e9ddf5" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="920" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">8: RGG</text>
+<text x="115" y="941" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">256 ch | 20 x 20</text>
+<rect x="30.0" y="997" width="170" height="56" rx="12" fill="#cae0a1" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="1020" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">9: SPPF</text>
+<text x="115" y="1041" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">256 ch | 20 x 20</text>
+<rect x="350.0" y="897" width="170" height="56" rx="12" fill="#e6f2ff" stroke="#889397" stroke-width="1.2" />
+<text x="435" y="920" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#18222c">10: Nearest upsample</text>
+<text x="435" y="941" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">256 ch | 40 x 40 | 2x</text>
+<rect x="350.0" y="777" width="170" height="56" rx="12" fill="#cceaf0" stroke="#889397" stroke-width="1.2" />
+<text x="435" y="800" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">11: Concat</text>
+<text x="435" y="821" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">384 ch | 40 x 40</text>
+<rect x="350.0" y="697" width="170" height="56" rx="12" fill="#e5e2ef" stroke="#889397" stroke-width="1.2" />
+<text x="435" y="720" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">12: C2f</text>
+<text x="435" y="741" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 40 x 40</text>
+<rect x="350.0" y="597" width="170" height="56" rx="12" fill="#ffcc80" stroke="#b85e00" stroke-width="3" />
+<text x="435" y="620" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">13: DySample</text>
+<text x="435" y="641" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 80 x 80 | 2x</text>
+<rect x="350.0" y="517" width="170" height="56" rx="12" fill="#cceaf0" stroke="#889397" stroke-width="1.2" />
+<text x="435" y="540" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">14: Concat</text>
+<text x="435" y="561" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">192 ch | 80 x 80</text>
+<rect x="350.0" y="417" width="170" height="56" rx="12" fill="#e5e2ef" stroke="#889397" stroke-width="1.2" />
+<text x="435" y="440" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">15: C2f</text>
+<text x="435" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">64 ch | 80 x 80</text>
+<rect x="665.0" y="537" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="560" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">16: Conv</text>
+<text x="750" y="581" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">64 ch | 40 x 40</text>
+<rect x="665.0" y="697" width="170" height="56" rx="12" fill="#cceaf0" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="720" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">17: Concat</text>
+<text x="750" y="741" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">192 ch | 40 x 40</text>
+<rect x="665.0" y="777" width="170" height="56" rx="12" fill="#e5e2ef" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="800" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">18: C2f</text>
+<text x="750" y="821" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 40 x 40</text>
+<rect x="665.0" y="897" width="170" height="56" rx="12" fill="#fff0b0" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="920" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">19: Conv</text>
+<text x="750" y="941" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">128 ch | 20 x 20</text>
+<rect x="665.0" y="997" width="170" height="56" rx="12" fill="#cceaf0" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="1020" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">20: Concat</text>
+<text x="750" y="1041" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">384 ch | 20 x 20</text>
+<rect x="665.0" y="1097" width="170" height="56" rx="12" fill="#e5e2ef" stroke="#889397" stroke-width="1.2" />
+<text x="750" y="1120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">21: C2f</text>
+<text x="750" y="1141" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">256 ch | 20 x 20</text>
+<rect x="42.5" y="117.0" width="145" height="56" rx="12" fill="#f1f5f9" stroke="#889397" stroke-width="1.2" />
+<text x="115" y="140.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">Input</text>
+<text x="115" y="161.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">3 ch | 640 x 640</text>
+<rect x="965.0" y="417" width="170" height="56" rx="12" fill="#b8e38a" stroke="#889397" stroke-width="1.2" />
+<text x="1050" y="440" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">P3 detection</text>
+<text x="1050" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">80 x 80 | stride 8</text>
+<rect x="965.0" y="777" width="170" height="56" rx="12" fill="#b8e38a" stroke="#889397" stroke-width="1.2" />
+<text x="1050" y="800" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">P4 detection</text>
+<text x="1050" y="821" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">40 x 40 | stride 16</text>
+<rect x="965.0" y="1097" width="170" height="56" rx="12" fill="#b8e38a" stroke="#889397" stroke-width="1.2" />
+<text x="1050" y="1120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#18222c">P5 detection</text>
+<text x="1050" y="1141" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#334155">20 x 20 | stride 32</text>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#334155">
+<text x="590" y="1250" font-size="16" font-weight="bold">Highlighted layer 13: scale=2, style=lp, groups=4, dyscope=False</text>
+<text x="590" y="1280" font-size="14">P3, P4 and P5 are branches of one Detect module (layer 22), fed by layers 15, 18 and 21.</text>
+<text x="590" y="1303" font-size="14">RGG backbone and DIMIoU Strategy H retained.</text>
+</g></svg>

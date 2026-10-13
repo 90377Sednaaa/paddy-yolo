@@ -215,3 +215,28 @@ def test_paddy_trainer_validation_loss_integration(local_data):
     assert isinstance(trainer.ema.ema.criterion, PaddyDetectionLoss)
     assert trainer.model.criterion.bbox_loss.strategy == "H"
     assert trainer.ema.ema.criterion.bbox_loss.strategy == "H"
+
+
+@pytest.mark.parametrize("model_config", ["configs/paddy-yolo.yaml", "configs/Paddy-YOLO-DySample.yaml"])
+def test_paddy_trainer_validation_with_parallel_model(local_data, model_config):
+    """Validation must configure the detection model inside a parallel wrapper."""
+    from paddy_yolo.engine.trainer import PaddyTrainer
+    from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
+
+    trainer = PaddyTrainer(overrides={
+        "data": local_data,
+        "model": model_config,
+        "epochs": 1,
+        "imgsz": 64,
+        "batch": 2,
+        "save": False,
+        "plots": False,
+    })
+    model = trainer.get_model(cfg=model_config, verbose=False)
+    trainer.model = nn.DataParallel(model)
+    trainer.ema = None
+
+    trainer._on_val_start()
+
+    assert isinstance(model.criterion, PaddyDetectionLoss)
+    assert model.init_criterion().bbox_loss.strategy == "H"

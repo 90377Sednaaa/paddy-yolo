@@ -42,6 +42,17 @@ def test_finite_epoch_is_accepted():
     require_finite_epoch(SimpleNamespace(tloss=torch.ones(3), epoch=0, metrics={"val/cls_loss": 2.0}))
 
 
+def test_ddp_worker_without_validation_metrics_is_accepted():
+    """Ultralytics returns no validation metric dictionary on nonzero ranks."""
+    require_finite_epoch(SimpleNamespace(tloss=torch.ones(3), epoch=0, metrics=None))
+
+
+def test_ddp_worker_without_metrics_still_rejects_nonfinite_training():
+    trainer = SimpleNamespace(tloss=torch.tensor([1., float("nan"), 1.]), epoch=0, metrics=None)
+    with pytest.raises(FloatingPointError, match="Non-finite training"):
+        require_finite_epoch(trainer)
+
+
 @pytest.mark.parametrize("history,exception", [
     ("epoch,val/cls_loss\n1,1.0\n2,inf\n", FloatingPointError),
     ("epoch,val/cls_loss\n1,1.0\n", ValueError),

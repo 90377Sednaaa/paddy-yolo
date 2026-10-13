@@ -1,0 +1,50 @@
+# Paddy-YOLO-DySample preflight
+
+The separate follow-up [DySample+ experiment](dysample-plus-experiment.md) enables dynamic scope at both upsampling layers and has its own Kaggle notebook and training output project.
+
+The approved [plain DySample five-fold run](dysample-fivefold-run.md) trains all five folds independently and exports held-out test results with mean and sample standard deviation.
+
+The proposed model is selectable through `configs/Paddy-YOLO-DySample.yaml`. The original `configs/paddy-yolo.yaml` is unchanged. A private validation-only Kaggle notebook completed at [dmrashidferrer/paddy-yolo-dysample-preflight](https://www.kaggle.com/code/dmrashidferrer/paddy-yolo-dysample-preflight). Following the user's subsequent request to start training, the full R2000 fold 0 run was submitted at [dmrashidferrer/paddy-yolo-dysample-r2000-fold0](https://www.kaggle.com/code/dmrashidferrer/paddy-yolo-dysample-r2000-fold0).
+
+## Architecture and source
+
+The existing model has four RGG backbone blocks at model layers 2, 4, 6 and 8, a feature fusion neck, and one Detect module at layer 22 receiving P3/P4/P5 from layers 15, 18 and 21. Its training criterion uses DIMIoU Strategy H in `paddy_yolo/loss/paddy_loss.py`. The only proposed architecture edits are the neck's nearest-neighbor upsamplers at **model layers 10 and 13**. These become `DySample` with `scale=2`, `style='lp'`, `groups=4`, `dyscope=False`. The parser injects the incoming channel count: 256 at layer 10 and 128 at layer 13. The outputs retain those channels and double both spatial dimensions, allowing the following concatenations and all three original detection heads to remain unchanged.
+
+`paddy_yolo/modules/dysample.py` is the [official DySample implementation](https://github.com/tiny-smart/dysample/blob/main/dysample.py), with only source attribution comments added. It retains offset prediction, `init_pos`, initialization, pixel shuffle and `grid_sample` behavior. Its [MIT license](https://github.com/tiny-smart/dysample/blob/main/LICENSE) is copied into `paddy_yolo/modules/DySample-LICENSE`. `paddy_yolo/modules/register.py` registers DySample in both model parser paths and infers `in_channels` from the preceding feature map. No RGG, DIMIoU, dataset, hyperparameter or Detect implementation was edited.
+
+## Pretrained transfer and verification
+
+Both models start from `yolov8n.pt` through the same `YOLO(config).load("yolov8n.pt")` shape-and-name matching route used by `train.py`. The transfer audit in `verify_dysample.py` checked every copied tensor for exact equality to the source checkpoint. Both models loaded **283 compatible state tensors**, covering matching parts of top-level layers **0–9, 12, 15–16, 18–19, 21–22**. The baseline has **318** separately initialized state entries; the proposed model has **324**. The six additional proposed entries are `init_pos`, `offset.weight` and `offset.bias` at each of layers 10 and 13. Full loaded and initialized tensor-key lists are in `data/kaggle_dysample_preflight/dysample_verification/comparison.json` after downloading Kaggle outputs. The custom RGG and other nonmatching tensors keep their normal initialization; no checkpoint tensors are forced into incompatible shapes.
+
+Local tests verified module initialization and gradient flow, YAML/model construction, end-to-end forward and backward passes, concatenation compatibility, and Detect input shapes at 640×640: **P3 `[1,64,80,80]`, P4 `[1,128,40,40]`, P5 `[1,256,20,20]`** for both variants. Each variant also completed one actual PaddyTrainer epoch on two synthetic 64×64 images using `yolov8n.pt`. The full local suite passed **132 tests**. On Kaggle, **8 focused tests passed** and both mini epochs completed. The original upstream DySample code emits a PyTorch `meshgrid` future warning; it does not affect these runs.
+
+An additional local resume check trained the proposed model for two tiny epochs with `--save-period 1`, then resumed from its `epoch0.pt` checkpoint. The checkpoint contained EMA model, optimizer, scaler, training arguments and epoch state, and the resumed process ran epoch 2 of 2. Ultralytics reconstructs the scheduler from the saved arguments and epoch rather than storing a standalone scheduler object. For future runs, use an unstripped periodic checkpoint or an interrupted run's `last.pt`; final completed-run `best.pt`/`last.pt` may have optimizer state stripped by Ultralytics.
+
+## Complexity comparison
+
+Measurements below came from the same Kaggle **Tesla T4**, with FP32, batch 1, 640×640 input, five warmups and 15 timed inferences per model. The Kaggle session exposed two T4 GPUs; latency was measured on GPU 0 for both models. Model size is the serialized FP32 `state_dict`, not a compressed training checkpoint.
+
+| Metric | Original Paddy-YOLO | Paddy-YOLO-DySample | Change |
+| --- | ---: | ---: | ---: |
+| Trainable parameters | 3,375,152 | 3,387,504 | +12,352 (+0.37%) |
+| Top-level architecture layers | 23 | 23 | 0 |
+| PyTorch modules | 376 | 378 | +2 |
+| FP32 state size | 13,777,820 bytes | 13,836,301 bytes | +58,481 bytes |
+| Median inference | 10.91 ms | 11.99 ms | +1.08 ms (+9.9%) |
+| FLOPs at 640×640 | 9.327 GFLOPs (Ultralytics/THOP) | **Not reliably measurable with THOP** | — |
+
+THOP does not correctly account for DySample's functional `pixel_shuffle` and `grid_sample` operations. Its proposed-model FLOP estimate would undercount work, so the verification report stores `null` instead of a misleading number. The GPU timing above is a small preflight benchmark, not an accuracy or throughput result. Full R2000 fold 0 training subsequently completed; see [the results report](dysample-fold0-results.md).
+
+## Kaggle training when ready
+
+The private notebook is built by `python build_dysample_kaggle_kernel.py --owner dmrashidferrer`; its output directory is `kaggle_dysample_kernel/`. The submitted version has `RUN_FULL_TRAINING = False`, so it only runs tests, pretrained-transfer checks, one-epoch synthetic mini training and profiling. To start a full R2000 run later, edit the notebook's last cell to set `RUN_FULL_TRAINING = True`, choose `VARIANT = 'baseline'` or `'proposed'`, and choose `FOLD = 0` through `4`. Run one variant/fold per notebook version, then repeat for the comparison. The mounted dataset remains `dmrashidpferrer/r2000-pestnet`; the runner uses the existing `prepare_kaggle_r2000` and `create_5fold_splits(seed=42)` functions.
+
+The dedicated full-run notebook is built by `python build_dysample_full_kernel.py --owner dmrashidferrer --fold 0` in `kaggle_dysample_full_kernel/`. It runs the proposed architecture on real R2000 data immediately, without repeating the synthetic preflight. It searches Kaggle inputs for the R2000 `data.yaml` and downloads the published dataset if Kaggle does not mount it. Version 1 stopped before training because the dataset was absent at the expected mount path. Version 2 found the dataset and entered two-GPU training, but both workers crashed at the first validation because `PaddyTrainer._on_val_start` passed a `DistributedDataParallel` wrapper to `PaddyDetectionLoss`, which requires the underlying `DetectionModel`. The trainer now unwraps the model before attaching the validation criterion; version 3 was submitted with this fix. The regression test covers parallel-wrapped baseline and proposed models. The failed version's recorded execution lasted about 180 seconds, with training beginning at 142 seconds and the exception occurring at 163 seconds. Kaggle CLI did not expose live logs while the run was marked RUNNING, so the earlier roughly 2,500-second wait cannot be attributed to model training from the available logs; it includes time before execution/log availability that these logs cannot separate.
+
+Version 3 passed the first epoch's validation, confirming the wrapper fix, but then failed in `require_finite_epoch` on rank 1: Ultralytics returns validation metrics only on rank 0, so rank 1's `trainer.metrics` is `None`. The callback now checks training losses on every worker and checks validation metrics when present. Regression tests verify that a worker without metrics can finish a finite epoch and still rejects a NaN training loss. The 18 affected stability/loss tests passed, and a two-process CPU DDP smoke test completed two epochs of forward/backward, validation loss and both custom callbacks. Version 4 completed all 300 epochs on two T4 GPUs with finite metrics throughout; its best checkpoint came from epoch 287. See [the results report](dysample-fold0-results.md) for metrics and downloaded artifact paths.
+
+The runner calls `train.py` with the selected YAML, `--weights yolov8n.pt`, `--hyp configs/hyp_paper.yaml`, 300 epochs, global batch 32, image size 640, `--save-period 50`, and distinct output projects under `/kaggle/working/dysample_training/{baseline|proposed}/foldN`. When two GPUs are exposed it passes `--device 0,1`, which Ultralytics launches as one DistributedDataParallel training job with batch 16 per GPU. With one GPU it uses `--device 0` and the same global batch 32. The project hyperparameters, including AdamW and no early stopping, are unchanged.
+
+For a new Kaggle session, mount the prior run's checkpoint as a Kaggle input and set `RESUME_FROM` in the notebook to the checkpoint path, for example `/kaggle/input/prior-run/epoch50.pt`. Keep the same variant and fold. The runner verifies the checkpoint's architecture, fold, output project, optimizer and scaler state before passing `--resume-from` instead of `--weights`, restoring training state without restarting from YOLOv8n. `last.pt` is saved each epoch, and `--save-period 50` also creates periodic `epoch0.pt`, `epoch50.pt`, etc. (Ultralytics uses zero-based epoch filenames). Preserve these outputs between sessions using Kaggle version output or a dataset; a canceled session's unsaved working directory is not a reliable checkpoint source.
+
+For local checks: `python -m pytest tests/test_dysample.py tests/test_dysample_training_cli.py tests/test_dysample_kaggle_kernel.py -q` and `python verify_dysample.py --device cpu --mini-train`.
