@@ -319,8 +319,8 @@ print(f"Jupyter notebook saved to: {nb_path} ({nb_path.stat().st_size} bytes)")
 
 # 3. Kernel metadata
 meta = {
-    "id": "dmrashidferrer/paddy-yolo-dysample-fold0",
-    "title": "Paddy-YOLO DySample Fold 0 Benchmark",
+    "id": "leanadrianmurillo/paddy-yolo-dysample-fold0",
+    "title": "paddy-yolo-dysample-fold0",
     "code_file": "paddy_yolo_dysample_fold0.ipynb",
     "language": "python",
     "kernel_type": "notebook",
