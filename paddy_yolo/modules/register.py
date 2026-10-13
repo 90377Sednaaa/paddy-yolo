@@ -22,7 +22,6 @@ import ultralytics.nn.modules as ultralytics_modules
 import ultralytics.nn.modules.block as ultralytics_block
 import ultralytics.nn.tasks as ultralytics_tasks
 
-from paddy_yolo.modules.ema import EMA
 from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.repconv import RepConv
 from paddy_yolo.modules.rgg import RGG, RGGBottleneck, RGGConv
@@ -34,7 +33,6 @@ CUSTOM_MODULES: Dict[str, Type[nn.Module]] = {
     "RGGConv": RGGConv,
     "RepConv": RepConv,
     "GhostConv": GhostConv,
-    "EMA": EMA,
 }
 
 _PADDY_MODULES_REGISTERED = False
@@ -175,7 +173,7 @@ def _build_fallback_parse_model():
                     legacy = False
                     if scale in "mlx":
                         args[3] = True
-            elif m in {getattr(ultralytics_tasks, "AIFI", None), EMA, getattr(ultralytics_tasks, "EMA", None)}:
+            elif m is getattr(ultralytics_tasks, "AIFI", None):
                 args = [ch[f], *args]
                 c2 = ch[f]
             elif m in {
@@ -291,11 +289,6 @@ def register_paddy_modules() -> None:
         src = inspect.getsource(ultralytics_tasks.parse_model)
         if "RGG" not in src and "C2f," in src:
             new_src = src.replace("C2f,", "C2f,\n            RGG,")
-            if "elif m is AIFI:" in new_src:
-                new_src = new_src.replace(
-                    "elif m is AIFI:",
-                    "elif m in {AIFI, EMA}:",
-                )
             local_ns: dict = {}
             exec(new_src, ultralytics_tasks.__dict__, local_ns)
             new_parse_model = local_ns["parse_model"]

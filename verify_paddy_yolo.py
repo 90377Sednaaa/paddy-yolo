@@ -28,7 +28,6 @@ from paddy_yolo.modules.register import register_paddy_modules
 from paddy_yolo.modules.repconv import RepConv
 from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.rgg import RGG, RGGBottleneck, RGGConv
-from paddy_yolo.modules.ema import EMA
 from paddy_yolo.loss.dimiou import dimiou_loss, get_dynamic_ratio
 from paddy_yolo.loss.paddy_loss import PaddyBboxLoss, PaddyDetectionLoss
 from paddy_yolo.engine import PaddyTrainer
@@ -281,45 +280,6 @@ def verify_mini_training_step(device: str = "cpu") -> bool:
     return True
 
 
-def verify_ema(device: str = "cpu") -> bool:
-    """Verify EMA multi-scale attention, coordinate pooling, and gradient flow."""
-    print("  [7.1] Testing EMA cross-spatial multi-scale attention forward pass...")
-    ema = EMA(channels=32, factor=8).to(device)
-    x = torch.randn(2, 32, 16, 16, device=device, requires_grad=True)
-    out = ema(x)
-    assert out.shape == x.shape, f"Expected shape {x.shape}, got {out.shape}"
-
-    print("  [7.2] Testing EMA gradient flow back to input...")
-    loss = out.sum()
-    loss.backward()
-    assert x.grad is not None and not torch.isnan(x.grad).any(), "EMA gradients contain NaN"
-    print("  [PASSED] EMA cross-spatial multi-scale attention confirmed.")
-    return True
-
-
-def verify_enhanced_model(device: str = "cpu") -> bool:
-    """Verify Enhanced Paddy-YOLO (P2-EMA) 4-head architecture and forward anchors."""
-    print("  [8.1] Testing Enhanced Paddy-YOLO (P2-EMA) configuration parsing...")
-    register_paddy_modules()
-    cfg_path = "configs/paddy-yolo-p2-ema.yaml"
-    assert Path(cfg_path).is_file(), f"{cfg_path} not found"
-
-    model = YOLO(cfg_path).model.to(device)
-    param_count = sum(p.numel() for p in model.parameters())
-    print(f"  [8.2] Enhanced model parameter count: {param_count:,} parameters")
-    assert 3_000_000 < param_count < 3_600_000, f"Unexpected parameter count: {param_count}"
-
-    print("  [8.3] Testing 4-head forward pass with 34,000 anchor points...")
-    model.eval()
-    x = torch.randn(1, 3, 640, 640, device=device)
-    with torch.no_grad():
-        preds = model(x)
-    assert isinstance(preds, tuple), "Predictions must be a tuple"
-    assert preds[0].shape == (1, 20, 34000), f"Expected (1, 20, 34000), got {preds[0].shape}"
-    print("  [PASSED] Enhanced Paddy-YOLO 4-head P2-EMA architecture confirmed.")
-    return True
-
-
 def run_verification(smoke_test: bool = False, device: str = "cpu") -> bool:
     """Execute all verification checks."""
     print("=" * 70)
@@ -334,8 +294,6 @@ def run_verification(smoke_test: bool = False, device: str = "cpu") -> bool:
         ("Step 4: DIMIoU Loss & Strategy H", lambda: verify_dimiou_loss(device)),
         ("Step 5: Model Architecture Parsing & Forward Pass", lambda: verify_model_architecture(device)),
         ("Step 6: End-to-End Mini Training Step", lambda: verify_mini_training_step(device)),
-        ("Step 7: EMA Multi-Scale Attention & Gradients", lambda: verify_ema(device)),
-        ("Step 8: Enhanced Paddy-YOLO (P2-EMA) Architecture & 4 Heads", lambda: verify_enhanced_model(device)),
     ]
 
     for title, check_fn in checks:
@@ -352,7 +310,7 @@ def run_verification(smoke_test: bool = False, device: str = "cpu") -> bool:
             return False
 
     print("\n" + "=" * 70)
-    print("Verification PASSED: All 8 verification checks completed successfully!")
+    print("Verification PASSED: All 6 verification checks completed successfully!")
     print("=" * 70)
     return True
 
