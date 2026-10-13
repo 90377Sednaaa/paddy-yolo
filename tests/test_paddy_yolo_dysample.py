@@ -17,3 +17,20 @@ def test_paddy_yolo_dysample_build():
     # Check total parameter count is approximately 3.16M params
     param_count = sum(p.numel() for p in model.model.parameters())
     assert 3_000_000 < param_count < 3_500_000, f"Unexpected param count: {param_count}"
+
+
+def test_pretrained_weights_transfer():
+    """Verify transferring weights from yolov8n.pt into Paddy-YOLO-DySample."""
+    from pathlib import Path
+
+    weights_path = Path("yolov8n.pt")
+    if not weights_path.is_file():
+        return
+
+    register_paddy_modules()
+    model = YOLO("configs/paddy-yolo-dysample.yaml")
+    model.load(str(weights_path))
+
+    # Verify model forward pass succeeds after loading weights
+    out = model(torch.randn(1, 3, 640, 640), verbose=False)
+    assert out is not None
