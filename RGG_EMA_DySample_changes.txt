@@ -1,0 +1,137 @@
+RGG compatibility with EMA and DySample
+Date: 2026-10-13 (Asia/Manila)
+
+Purpose
+Ensure that the existing RGG backbone, Efficient Multi-Scale Attention (EMA)
+blocks, and DySample neck work together during training, checkpoint loading,
+weight averaging, and deployment. The enhanced architecture uses EMA after
+the P3/P4/P5 RGG blocks and DySample in both top-down neck paths.
+
+Finding
+The existing feature dimensions were already compatible. RGGConv and
+RGGBottleneck, however, registered the same internal modules under multiple
+names. PyTorch serialized the same parameters and buffers repeatedly under
+these aliases. Ultralytics ModelEMA iterates over every state_dict entry,
+so it updated some shared tensors multiple times per optimizer step.
+
+ModelEMA is the training engine's exponential moving average of weights.
+It is separate from the Efficient Multi-Scale Attention module in the backbone.
+
+Changes
+1. paddy_yolo/modules/rgg.py
+   - Added _CanonicalModuleAliases to keep one registered name per module.
+   - Replaced RGGConv cv1/cv2/cv3/fuse module registrations with properties
+     pointing to rep/ghost1/ghost2/conv.
+   - Replaced RGGBottleneck rgg_conv registration with a property pointing
+     to cv2.
+   - Added historical whole-model checkpoint normalization in __setstate__.
+   - Added legacy state_dict alias migration so old checkpoints can still
+     load strictly. Canonical keys take precedence over duplicated alias keys.
+   - Preserved the actual RGG feature computation and pretrained tensor names.
+
+2. tests/test_rgg_ema_dysample.py
+   - Added joint RGG -> EMA -> DySample forward and backward checks at
+     64, 128, and 256 channels, with LP and PL sampling styles.
+   - Exercised odd feature sizes and noncontiguous input tensors.
+   - Checked finite gradients in RGG, EMA attention, and DySample offsets.
+   - Checked CPU bfloat16 autocast.
+   - Verified that weight averaging updates every floating state tensor once.
+   - Checked historical state-only and whole-model checkpoint loading.
+   - Checked equivalent output after RGG RepConv deployment fusion and
+     parity between RGG forward and forward_split.
+
+3. kaggle/ema_dysample/ema_dysample.ipynb
+   - Rebuilt the notebook with the corrected RGG implementation and new tests.
+   - The source archive contains 49 allowlisted files.
+   - Checked that all code cells compile and that embedded RGG/test sources
+     match the current repository files.
+
+Model and pretraining verification
+- Enhanced model parameter count: 3,388,416.
+- State entries decreased from 1,471 to 625 after duplicate aliases were removed.
+- Every state entry in the enhanced model has unique tensor storage.
+- 283 compatible yolov8n.pt tensors still transfer, and every transferred
+  tensor was compared exactly against its source checkpoint.
+- Parameter coverage remains approximately 70.80%; new RGG paths, EMA,
+  DySample, and incompatible classification tensors still initialize separately.
+- The downloaded best.pt from the previous Kaggle run loads with the revised
+  code and produces finite CPU predictions with shape [1, 20, 84] at 64x64 input.
+- The historical best.pt file was not rewritten; its checksum is preserved.
+
+Validation
+- Focused RGG, EMA, and DySample suite: 38 passed.
+- git diff --check: passed.
+- Full repository suite: 111 passed in 227.55 seconds.
+- Full-suite command: .venv/Scripts/python.exe -m pytest -q
+  --basetemp=.local/pytest-rgg-compat-full
+
+Limits
+These changes fix duplicate state registration and verify module integration.
+They do not establish the cause of the previous run's lower accuracy or prove
+an accuracy improvement. GPU FP16 training must be checked in a subsequent
+Kaggle run; the mixed-precision check in this change uses CPU bfloat16.
+The existing training hyperparameters and archived evaluation scores describe
+the previous run. No new Kaggle job was submitted as part of this code change.
+
+
+Single-fold Kaggle rerun requested after the compatibility change
+Submitted: 2026-10-13 16:35:26 (Asia/Manila)
+Notebook: https://www.kaggle.com/code/dmrashidpferrer/paddy-yolo-ema-dysample-rgg-fold0
+Version: 1
+Fold count: 1, using the supplied train/validation/test split.
+Dataset: dmrashidpferrer/r2000-pestnet
+Epochs: 300
+Initial weights: yolov8n.pt
+Batch: 32 total across 2 GPUs, 16 per GPU.
+Optimizer: AdamW
+Learning rate: 0.001
+Bias warmup learning rate: 0.0
+Hyperparameters: configs/hyp_ema_dysample.yaml
+Updated the EMA/DySample runner and notebook builder to pass the run-specific
+hyperparameter file and run name. The notebook bundle now contains 51 files.
+The lower learning rates are an experiment to address the previous unstable
+startup; improved accuracy must be established from this run's validation.
+Previous completed run and its local results remain available.
+Launch record: kaggle/ema_dysample/launch.json
+Planned results directory: results/ema_dysample/rgg_fold0
+
+
+Paper Table 5 preparation (2026-10-13, Asia/Manila)
+User requested preparation only. No Kaggle job submitted.
+Section 2.1.5: three partitions train, one validates, one tests.
+Exact images/instances: 405/456, 405/460, 405/458, 405/447, 404/460.
+Retained all 2024 images and 2281 instances; 12 duplicate groups stay together.
+New memberships match published counts; author image memberships are unavailable.
+Generator: paddy_yolo/dataset/paper_folds.py (SciPy integer allocation).
+Prepared local splits: results/ema_dysample/paper_5fold/splits.
+Kaggle configuration: kaggle/ema_dysample/paper_5fold.
+Validation: four generator tests passed; no duplicate leakage; every image
+appears in training three times, validation once, and test once.
+Preserved current corrected RGG, EMA/DySample, YOLOv8n weights, batch 32,
+300 epochs per fold, AdamW 0.001, and zero bias warmup for later training.
+
+
+Paper five-fold Kaggle run submitted on user request
+Submitted: 2026-10-13 20:13:39 (Asia/Manila)
+Notebook: https://www.kaggle.com/code/dmrashidpferrer/paddy-yolo-ema-dysample-paper-5fold
+Version: 1
+Protocol: 3 training partitions, 1 validation partition, 1 test partition.
+Five independent models execute sequentially, 300 epochs per fold.
+Batch 32 across two T4 GPUs (16 each); initial weights yolov8n.pt.
+AdamW lr0=0.001; warmup_bias_lr=0.0.
+Session limit: 27000 seconds.
+GPU hours available at submission: 7.69.
+Launch record: kaggle/ema_dysample/paper_5fold/launch.json
+Planned results directory: results/ema_dysample/paper_5fold
+
+
+Five-fold result recovery completed
+Verified: 2026-10-14 04:01:24 (Asia/Manila)
+Destination: results/ema_dysample/fivefold
+Recovered 355 remote artifacts (1,458,389,485 bytes).
+All local SHA-256 checks passed; no download failures.
+All five best checkpoints loaded with finite CPU inference.
+Each fold CSV contains 300 completed epochs. Individual metrics and
+aggregate means/sample standard deviations agree. Actual remote fold
+splits match Table 5 and have no duplicate-content leakage.
+Summary: results/ema_dysample/fivefold/README.md

@@ -1,0 +1,12 @@
+{
+  "remote_status": "KernelWorkerStatus.CANCEL_ACKNOWLEDGED",
+  "explicit_api_failure_message": "",
+  "configured_timeout_seconds": 27000,
+  "gpu_hours_consumed_since_submission": 7.503138333333333,
+  "last_log_time_seconds": 24008.216116615,
+  "last_stage": "nbconvert notebook conversion",
+  "completed_folds": 5,
+  "epochs_per_fold": 300,
+  "likely_cause": "configured session time limit reached during notebook export",
+  "cause_is_inferred": true
+}

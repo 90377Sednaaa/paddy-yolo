@@ -1,0 +1,22 @@
+path: C:/Users/rhena/OneDrive/Documents/College Files/Paddy-YOLO/Model/paddy-yolo/results/ema_dysample/paper_5fold/splits
+nc: 16
+names:
+- classID_00
+- classID_01
+- classID_02
+- classID_03
+- classID_04
+- classID_05
+- classID_06
+- classID_07
+- classID_08
+- classID_09
+- classID_10
+- classID_11
+- classID_12
+- classID_13
+- classID_14
+- classID_15
+test: fold2_test.txt
+val: fold2_val.txt
+train: fold2_train.txt

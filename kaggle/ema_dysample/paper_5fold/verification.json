@@ -1,0 +1,56 @@
+{
+  "status": "KernelWorkerStatus.CANCEL_ACKNOWLEDGED",
+  "paper_table5_counts_match": true,
+  "images": 2024,
+  "instances": 2281,
+  "unique_image_groups": 2012,
+  "ratio": [
+    3,
+    1,
+    1
+  ],
+  "cross_split_image_content_leakage": 0,
+  "all_classes_present_in_all_splits": true,
+  "each_image_train_visits": 3,
+  "each_image_val_visits": 1,
+  "each_image_test_visits": 1,
+  "partition_counts": [
+    {
+      "partition": 0,
+      "images": 405,
+      "instances": 456
+    },
+    {
+      "partition": 1,
+      "images": 405,
+      "instances": 460
+    },
+    {
+      "partition": 2,
+      "images": 405,
+      "instances": 458
+    },
+    {
+      "partition": 3,
+      "images": 405,
+      "instances": 447
+    },
+    {
+      "partition": 4,
+      "images": 404,
+      "instances": 460
+    }
+  ],
+  "split_generator_tests": "4 passed",
+  "original_author_membership_verified": false,
+  "kaggle_submitted": true,
+  "notebook_cells_compile": true,
+  "embedded_sources_match_repository": true,
+  "bundled_source_files": 55,
+  "five_independent_training_commands_verified_without_training": true,
+  "launch_record": "launch.json",
+  "remote_status_checked_at_utc": "2026-10-13T12:14:39.121054+00:00",
+  "artifact_recovery_complete": true,
+  "results_directory": "results/ema_dysample/fivefold",
+  "downloaded_artifacts": 355
+}

@@ -1,0 +1,16 @@
+{
+  "id": "dmrashidpferrer/paddy-yolo-ema-dysample-rgg-fold0",
+  "title": "Paddy YOLO EMA DySample RGG Fold0",
+  "code_file": "ema_dysample.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "dmrashidpferrer/r2000-pestnet"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

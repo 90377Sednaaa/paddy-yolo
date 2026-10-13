@@ -1,8 +1,25 @@
 import pytest
 import torch
 import torch.nn as nn
+import yaml
 from ultralytics import YOLO
 from ultralytics.nn.tasks import DetectionModel
+
+
+@pytest.fixture
+def trainer_data(tmp_path):
+    """Keep trainer integration checks independent of downloads and COCO."""
+    from paddy_yolo.dataset import generate_dummy_dataset, R2000_CLASSES
+
+    root = generate_dummy_dataset(tmp_path / "data", num_images=2, img_size=(64, 64))
+    config = root / "data.yaml"
+    config.write_text(yaml.safe_dump({
+        "path": root.resolve().as_posix(),
+        "train": "images",
+        "val": "images",
+        "names": R2000_CLASSES,
+    }), encoding="utf-8")
+    return str(config)
 
 
 def test_imports_and_exports():
@@ -122,14 +139,15 @@ def test_paddy_detection_loss_forward_and_backward():
     assert loss_items_2.shape == (3,)
 
 
-def test_paddy_trainer_initialization_and_get_model():
+def test_paddy_trainer_initialization_and_get_model(trainer_data, tmp_path):
     """Verify PaddyTrainer instantiates, registers modules, and configures model with PaddyDetectionLoss."""
     from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
     from paddy_yolo.engine.trainer import PaddyTrainer
 
     # Use small dataset/config overrides
     overrides = {
-        "data": "coco8.yaml",
+        "data": trainer_data,
+        "project": str(tmp_path / "runs"),
         "model": "configs/paddy-yolo.yaml",
         "epochs": 1,
         "imgsz": 64,
@@ -170,14 +188,15 @@ def test_paddy_trainer_initialization_and_get_model():
     assert isinstance(model.criterion, PaddyDetectionLoss)
 
 
-def test_paddy_trainer_validation_loss_integration():
+def test_paddy_trainer_validation_loss_integration(trainer_data, tmp_path):
     """Verify PaddyTrainer callbacks/methods ensure PaddyDetectionLoss is used during validation."""
     from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
     from paddy_yolo.engine.trainer import PaddyTrainer
     from ultralytics.utils.torch_utils import ModelEMA
 
     overrides = {
-        "data": "coco8.yaml",
+        "data": trainer_data,
+        "project": str(tmp_path / "runs"),
         "model": "configs/paddy-yolo.yaml",
         "epochs": 1,
         "imgsz": 64,
@@ -199,3 +218,17 @@ def test_paddy_trainer_validation_loss_integration():
     assert isinstance(trainer.ema.ema.criterion, PaddyDetectionLoss)
     assert trainer.model.criterion.bbox_loss.strategy == "H"
     assert trainer.ema.ema.criterion.bbox_loss.strategy == "H"
+
+
+def test_paddy_validation_loss_unwraps_parallel_model():
+    """A wrapped model must use the raw Detect module when rebuilding its loss."""
+    from paddy_yolo.engine.trainer import PaddyTrainer
+    from paddy_yolo.loss.paddy_loss import PaddyDetectionLoss
+
+    trainer = object.__new__(PaddyTrainer)
+    raw_model = YOLO("configs/paddy-yolo-ema-dysample.yaml").model
+    trainer.model = torch.nn.DataParallel(raw_model)
+    trainer._on_val_start()
+    assert isinstance(raw_model.criterion, PaddyDetectionLoss)
+    assert raw_model.init_criterion.model is raw_model
+    assert raw_model.criterion.bbox_loss.strategy == "H"

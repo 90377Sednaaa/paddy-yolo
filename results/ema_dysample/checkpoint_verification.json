@@ -1,0 +1,22 @@
+{
+  "checkpoint": "results/ema_dysample/train/ema_dysample_fold0/weights/best.pt",
+  "load_success": true,
+  "device": "cpu",
+  "torch": "2.7.1+cpu",
+  "classes": 16,
+  "strides": [
+    8.0,
+    16.0,
+    32.0
+  ],
+  "modules": {
+    "EMA": 3,
+    "DySample": 2
+  },
+  "prediction_shape": [
+    1,
+    20,
+    84
+  ],
+  "predictions_finite": true
+}

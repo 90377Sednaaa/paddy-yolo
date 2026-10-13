@@ -1,0 +1,23 @@
+{
+  "kernel": "dmrashidpferrer/paddy-yolo-ema-dysample-fold0",
+  "url": "https://www.kaggle.com/code/dmrashidpferrer/paddy-yolo-ema-dysample-fold0",
+  "version": 2,
+  "submitted_at_utc": "2026-10-13T04:51:29.777909+00:00",
+  "accelerator": "NvidiaTeslaT4",
+  "is_private": true,
+  "source_sha256": "3e336652fc0a5bd176e928f04dea549218d88daea1418f5c867dc6c8aabf53b5",
+  "kaggle_preflight_tests": "100 passed",
+  "kaggle_real_dataset_verification": "one epoch and checkpoint reload/evaluation passed on both GPUs",
+  "epochs": 300,
+  "batch": 32,
+  "world_size": 2,
+  "batch_per_gpu": 16,
+  "device": "0,1",
+  "status": "KernelWorkerStatus.COMPLETE",
+  "failure_message": "",
+  "results_directory": "results/ema_dysample",
+  "results_retrieved_at_utc": "2026-10-13T07:52:15.100936+00:00",
+  "completed_epochs": 300,
+  "downloaded_artifacts": 69,
+  "download_failures": 0
+}

@@ -59,7 +59,8 @@ def test_predict_script_help():
         assert opt in res.stdout, f"Expected {opt} in predict.py --help"
 
 
-def test_train_script_execution(tmp_path: Path):
+@pytest.mark.parametrize("baseline", [False, True], ids=["paddy", "yolov8n"])
+def test_train_script_execution(tmp_path: Path, baseline: bool):
     """Verify train.py completes 1 epoch training run on synthetic dataset."""
     data_dir = tmp_path / "train_dummy"
     generate_dummy_dataset(data_dir, num_images=4, img_size=(64, 64))
@@ -89,6 +90,8 @@ def test_train_script_execution(tmp_path: Path):
         "--project", str(project_dir),
         "--name", "test_train",
     ]
+    if baseline:
+        cmd.append("--baseline")
     res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert res.returncode == 0, f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
 

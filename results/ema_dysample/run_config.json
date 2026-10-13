@@ -1,0 +1,19 @@
+{
+  "account": "dmrashidpferrer",
+  "dataset": "dmrashidpferrer/r2000-pestnet",
+  "split": "supplied_train_val_test",
+  "run_name": "ema_dysample_fold0",
+  "architecture": "configs/paddy-yolo-ema-dysample.yaml",
+  "scale": "n",
+  "initial_weights": "yolov8n.pt",
+  "epochs": 300,
+  "batch": 32,
+  "batch_per_gpu": 16,
+  "imgsz": 640,
+  "workers": 2,
+  "device": "0,1",
+  "seed": 42,
+  "patience": 300,
+  "save_period": 25,
+  "dimiou_strategy": "H"
+}

@@ -1,0 +1,33 @@
+{
+  "model": "paddy",
+  "epochs": 300,
+  "seed": 42,
+  "architecture": "/kaggle/working/paddy_yolo_paper_source/configs/paddy-yolo-ema-dysample.yaml",
+  "run_name": "ema_dysample_paper_fold3",
+  "imgsz": 640,
+  "batch": 32,
+  "data": "/kaggle/working/paper_5fold_splits/data_fold3.yaml",
+  "world_size": 2,
+  "batch_per_gpu": 16,
+  "initial_weights": "yolov8n.pt",
+  "ultralytics": "8.3.18",
+  "torch": "2.11.0+cu128",
+  "device": "0,1",
+  "best_checkpoint": "/kaggle/working/ema_dysample_paper_5fold_output/fold3/train/ema_dysample_paper_fold3/weights/best.pt",
+  "metrics": {
+    "val": {
+      "mAP50": 0.7630961139527297,
+      "mAP50_95": 0.6047028466218791,
+      "precision": 0.7472034222247248,
+      "recall": 0.7063420591816603,
+      "f1": 0.7261984033291319
+    },
+    "test": {
+      "mAP50": 0.7821572359682089,
+      "mAP50_95": 0.6280894371125051,
+      "precision": 0.8169371574508171,
+      "recall": 0.7016398128475532,
+      "f1": 0.7549115329325478
+    }
+  }
+}

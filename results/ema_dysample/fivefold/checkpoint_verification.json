@@ -1,0 +1,111 @@
+{
+  "torch": "2.7.1+cpu",
+  "folds": [
+    {
+      "fold": 0,
+      "checkpoint": "fold0/train/ema_dysample_paper_fold0/weights/best.pt",
+      "classes": 16,
+      "strides": [
+        8.0,
+        16.0,
+        32.0
+      ],
+      "modules": {
+        "RGG": 4,
+        "EMA": 3,
+        "DySample": 2
+      },
+      "cpu_inference_finite": true,
+      "prediction_shape": [
+        1,
+        20,
+        84
+      ]
+    },
+    {
+      "fold": 1,
+      "checkpoint": "fold1/train/ema_dysample_paper_fold1/weights/best.pt",
+      "classes": 16,
+      "strides": [
+        8.0,
+        16.0,
+        32.0
+      ],
+      "modules": {
+        "RGG": 4,
+        "EMA": 3,
+        "DySample": 2
+      },
+      "cpu_inference_finite": true,
+      "prediction_shape": [
+        1,
+        20,
+        84
+      ]
+    },
+    {
+      "fold": 2,
+      "checkpoint": "fold2/train/ema_dysample_paper_fold2/weights/best.pt",
+      "classes": 16,
+      "strides": [
+        8.0,
+        16.0,
+        32.0
+      ],
+      "modules": {
+        "RGG": 4,
+        "EMA": 3,
+        "DySample": 2
+      },
+      "cpu_inference_finite": true,
+      "prediction_shape": [
+        1,
+        20,
+        84
+      ]
+    },
+    {
+      "fold": 3,
+      "checkpoint": "fold3/train/ema_dysample_paper_fold3/weights/best.pt",
+      "classes": 16,
+      "strides": [
+        8.0,
+        16.0,
+        32.0
+      ],
+      "modules": {
+        "RGG": 4,
+        "EMA": 3,
+        "DySample": 2
+      },
+      "cpu_inference_finite": true,
+      "prediction_shape": [
+        1,
+        20,
+        84
+      ]
+    },
+    {
+      "fold": 4,
+      "checkpoint": "fold4/train/ema_dysample_paper_fold4/weights/best.pt",
+      "classes": 16,
+      "strides": [
+        8.0,
+        16.0,
+        32.0
+      ],
+      "modules": {
+        "RGG": 4,
+        "EMA": 3,
+        "DySample": 2
+      },
+      "cpu_inference_finite": true,
+      "prediction_shape": [
+        1,
+        20,
+        84
+      ]
+    }
+  ],
+  "all_passed": true
+}

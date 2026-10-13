@@ -1,0 +1,17 @@
+{
+  "id": "dmrashidpferrer/paddy-yolo-ema-dysample-paper-5fold",
+  "title": "Paddy YOLO EMA DySample Paper 5Fold",
+  "code_file": "ema_dysample_paper_5fold.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "dmrashidpferrer/r2000-pestnet"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

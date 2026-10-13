@@ -1,0 +1,92 @@
+{
+  "dataset": "dmrashidpferrer/r2000-pestnet",
+  "names": [
+    "classID_00",
+    "classID_01",
+    "classID_02",
+    "classID_03",
+    "classID_04",
+    "classID_05",
+    "classID_06",
+    "classID_07",
+    "classID_08",
+    "classID_09",
+    "classID_10",
+    "classID_11",
+    "classID_12",
+    "classID_13",
+    "classID_14",
+    "classID_15"
+  ],
+  "splits": {
+    "train": {
+      "images": 1214,
+      "boxes": 1379,
+      "class_boxes": [
+        46,
+        88,
+        56,
+        66,
+        67,
+        59,
+        42,
+        40,
+        115,
+        91,
+        67,
+        237,
+        152,
+        83,
+        99,
+        71
+      ]
+    },
+    "val": {
+      "images": 304,
+      "boxes": 331,
+      "class_boxes": [
+        11,
+        23,
+        14,
+        17,
+        17,
+        15,
+        10,
+        8,
+        24,
+        21,
+        17,
+        61,
+        27,
+        25,
+        22,
+        19
+      ]
+    },
+    "test": {
+      "images": 506,
+      "boxes": 571,
+      "class_boxes": [
+        20,
+        38,
+        23,
+        25,
+        34,
+        24,
+        18,
+        18,
+        43,
+        38,
+        29,
+        111,
+        46,
+        35,
+        39,
+        30
+      ]
+    }
+  },
+  "boxes": 2281,
+  "duplicate_image_groups": 12,
+  "cross_split_duplicates": 0
+}

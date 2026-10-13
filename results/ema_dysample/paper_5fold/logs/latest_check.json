@@ -1,0 +1,41 @@
+{
+  "checked_at_utc": "2026-10-13T19:48:03.789717+00:00",
+  "status": "KernelWorkerStatus.CANCEL_ACKNOWLEDGED",
+  "failure_message": "",
+  "content_type": "application/json",
+  "log_events": 13319,
+  "latest_lines": [
+    "        \"std_sample\": 0.05712089927762312",
+    "      },",
+    "      \"recall\": {",
+    "        \"mean\": 0.7088775789297485,",
+    "        \"std_sample\": 0.030753261231155096",
+    "      },",
+    "      \"f1\": {",
+    "        \"mean\": 0.7462089422649801,",
+    "        \"std_sample\": 0.021571359788616965",
+    "      }",
+    "    }",
+    "  }",
+    "}",
+    "/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'",
+    "  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)",
+    "/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'",
+    "  text = re.sub(r'_', '\\_', text) # Escape underscores in display text",
+    "[NbConvertApp] Converting notebook __notebook__.ipynb to notebook"
+  ],
+  "stage_markers": [
+    "Ultralytics 8.3.18 \ud83d\ude80 Python-3.13.15 torch-2.11.0+cu128 CUDA:0 (Tesla T4, 14912MiB)",
+    "                                                        CUDA:1 (Tesla T4, 14912MiB)",
+    "      \"run_name\": \"ema_dysample_paper_fold0\",",
+    "      \"best_checkpoint\": \"/kaggle/working/ema_dysample_paper_5fold_output/fold0/train/ema_dysample_paper_fold0/weights/best.pt\",",
+    "      \"run_name\": \"ema_dysample_paper_fold1\",",
+    "      \"best_checkpoint\": \"/kaggle/working/ema_dysample_paper_5fold_output/fold1/train/ema_dysample_paper_fold1/weights/best.pt\",",
+    "      \"run_name\": \"ema_dysample_paper_fold2\",",
+    "      \"best_checkpoint\": \"/kaggle/working/ema_dysample_paper_5fold_output/fold2/train/ema_dysample_paper_fold2/weights/best.pt\",",
+    "      \"run_name\": \"ema_dysample_paper_fold3\",",
+    "      \"best_checkpoint\": \"/kaggle/working/ema_dysample_paper_5fold_output/fold3/train/ema_dysample_paper_fold3/weights/best.pt\",",
+    "      \"run_name\": \"ema_dysample_paper_fold4\",",
+    "      \"best_checkpoint\": \"/kaggle/working/ema_dysample_paper_5fold_output/fold4/train/ema_dysample_paper_fold4/weights/best.pt\","
+  ]
+}

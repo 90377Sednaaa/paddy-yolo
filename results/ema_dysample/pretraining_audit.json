@@ -1,0 +1,1242 @@
+{
+  "source_checkpoint": "initialization/yolov8n.pt",
+  "source_sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+  "source_classes": 80,
+  "target_classes": 16,
+  "transferred_state_tensors": 283,
+  "target_state_tensors": 1471,
+  "unique_parameter_elements": 3388416,
+  "transferred_unique_parameter_elements": 2398848,
+  "parameter_coverage_percent": 70.79555757026291,
+  "all_transferred_tensors_equal_source": true,
+  "new_ema_dysample_tensors_unchanged": 24,
+  "trainer_setup_preserves_entire_initialization": true,
+  "per_layer": {
+    "0": {
+      "type": "Conv",
+      "parameters": 464,
+      "transferred_parameters": 464
+    },
+    "1": {
+      "type": "Conv",
+      "parameters": 4672,
+      "transferred_parameters": 4672
+    },
+    "2": {
+      "type": "RGG",
+      "parameters": 11248,
+      "transferred_parameters": 5024
+    },
+    "3": {
+      "type": "Conv",
+      "parameters": 18560,
+      "transferred_parameters": 18560
+    },
+    "4": {
+      "type": "RGG",
+      "parameters": 78528,
+      "transferred_parameters": 31104
+    },
+    "5": {
+      "type": "EMA",
+      "parameters": 48,
+      "transferred_parameters": 0
+    },
+    "6": {
+      "type": "Conv",
+      "parameters": 73984,
+      "transferred_parameters": 73984
+    },
+    "7": {
+      "type": "RGG",
+      "parameters": 308608,
+      "transferred_parameters": 123648
+    },
+    "8": {
+      "type": "EMA",
+      "parameters": 176,
+      "transferred_parameters": 0
+    },
+    "9": {
+      "type": "Conv",
+      "parameters": 295424,
+      "transferred_parameters": 295424
+    },
+    "10": {
+      "type": "RGG",
+      "parameters": 677760,
+      "transferred_parameters": 312576
+    },
+    "11": {
+      "type": "EMA",
+      "parameters": 672,
+      "transferred_parameters": 0
+    },
+    "12": {
+      "type": "SPPF",
+      "parameters": 164608,
+      "transferred_parameters": 164608
+    },
+    "13": {
+      "type": "DySample",
+      "parameters": 8224,
+      "transferred_parameters": 0
+    },
+    "15": {
+      "type": "C2f",
+      "parameters": 148224,
+      "transferred_parameters": 148224
+    },
+    "16": {
+      "type": "DySample",
+      "parameters": 4128,
+      "transferred_parameters": 0
+    },
+    "18": {
+      "type": "C2f",
+      "parameters": 37248,
+      "transferred_parameters": 37248
+    },
+    "19": {
+      "type": "Conv",
+      "parameters": 36992,
+      "transferred_parameters": 36992
+    },
+    "21": {
+      "type": "C2f",
+      "parameters": 123648,
+      "transferred_parameters": 123648
+    },
+    "22": {
+      "type": "Conv",
+      "parameters": 147712,
+      "transferred_parameters": 147712
+    },
+    "24": {
+      "type": "C2f",
+      "parameters": 493056,
+      "transferred_parameters": 493056
+    },
+    "25": {
+      "type": "Detect",
+      "parameters": 754432,
+      "transferred_parameters": 381904
+    }
+  },
+  "copied_tensors": {
+    "model.0.conv.weight": "model.0.conv.weight",
+    "model.0.bn.weight": "model.0.bn.weight",
+    "model.0.bn.bias": "model.0.bn.bias",
+    "model.0.bn.running_mean": "model.0.bn.running_mean",
+    "model.0.bn.running_var": "model.0.bn.running_var",
+    "model.0.bn.num_batches_tracked": "model.0.bn.num_batches_tracked",
+    "model.1.conv.weight": "model.1.conv.weight",
+    "model.1.bn.weight": "model.1.bn.weight",
+    "model.1.bn.bias": "model.1.bn.bias",
+    "model.1.bn.running_mean": "model.1.bn.running_mean",
+    "model.1.bn.running_var": "model.1.bn.running_var",
+    "model.1.bn.num_batches_tracked": "model.1.bn.num_batches_tracked",
+    "model.2.cv1.conv.weight": "model.2.cv1.conv.weight",
+    "model.2.cv1.bn.weight": "model.2.cv1.bn.weight",
+    "model.2.cv1.bn.bias": "model.2.cv1.bn.bias",
+    "model.2.cv1.bn.running_mean": "model.2.cv1.bn.running_mean",
+    "model.2.cv1.bn.running_var": "model.2.cv1.bn.running_var",
+    "model.2.cv1.bn.num_batches_tracked": "model.2.cv1.bn.num_batches_tracked",
+    "model.2.cv2.conv.weight": "model.2.cv2.conv.weight",
+    "model.2.cv2.bn.weight": "model.2.cv2.bn.weight",
+    "model.2.cv2.bn.bias": "model.2.cv2.bn.bias",
+    "model.2.cv2.bn.running_mean": "model.2.cv2.bn.running_mean",
+    "model.2.cv2.bn.running_var": "model.2.cv2.bn.running_var",
+    "model.2.cv2.bn.num_batches_tracked": "model.2.cv2.bn.num_batches_tracked",
+    "model.2.m.0.cv1.conv.weight": "model.2.m.0.cv1.conv.weight",
+    "model.2.m.0.cv1.bn.weight": "model.2.m.0.cv1.bn.weight",
+    "model.2.m.0.cv1.bn.bias": "model.2.m.0.cv1.bn.bias",
+    "model.2.m.0.cv1.bn.running_mean": "model.2.m.0.cv1.bn.running_mean",
+    "model.2.m.0.cv1.bn.running_var": "model.2.m.0.cv1.bn.running_var",
+    "model.2.m.0.cv1.bn.num_batches_tracked": "model.2.m.0.cv1.bn.num_batches_tracked",
+    "model.3.conv.weight": "model.3.conv.weight",
+    "model.3.bn.weight": "model.3.bn.weight",
+    "model.3.bn.bias": "model.3.bn.bias",
+    "model.3.bn.running_mean": "model.3.bn.running_mean",
+    "model.3.bn.running_var": "model.3.bn.running_var",
+    "model.3.bn.num_batches_tracked": "model.3.bn.num_batches_tracked",
+    "model.4.cv1.conv.weight": "model.4.cv1.conv.weight",
+    "model.4.cv1.bn.weight": "model.4.cv1.bn.weight",
+    "model.4.cv1.bn.bias": "model.4.cv1.bn.bias",
+    "model.4.cv1.bn.running_mean": "model.4.cv1.bn.running_mean",
+    "model.4.cv1.bn.running_var": "model.4.cv1.bn.running_var",
+    "model.4.cv1.bn.num_batches_tracked": "model.4.cv1.bn.num_batches_tracked",
+    "model.4.cv2.conv.weight": "model.4.cv2.conv.weight",
+    "model.4.cv2.bn.weight": "model.4.cv2.bn.weight",
+    "model.4.cv2.bn.bias": "model.4.cv2.bn.bias",
+    "model.4.cv2.bn.running_mean": "model.4.cv2.bn.running_mean",
+    "model.4.cv2.bn.running_var": "model.4.cv2.bn.running_var",
+    "model.4.cv2.bn.num_batches_tracked": "model.4.cv2.bn.num_batches_tracked",
+    "model.4.m.0.cv1.conv.weight": "model.4.m.0.cv1.conv.weight",
+    "model.4.m.0.cv1.bn.weight": "model.4.m.0.cv1.bn.weight",
+    "model.4.m.0.cv1.bn.bias": "model.4.m.0.cv1.bn.bias",
+    "model.4.m.0.cv1.bn.running_mean": "model.4.m.0.cv1.bn.running_mean",
+    "model.4.m.0.cv1.bn.running_var": "model.4.m.0.cv1.bn.running_var",
+    "model.4.m.0.cv1.bn.num_batches_tracked": "model.4.m.0.cv1.bn.num_batches_tracked",
+    "model.4.m.1.cv1.conv.weight": "model.4.m.1.cv1.conv.weight",
+    "model.4.m.1.cv1.bn.weight": "model.4.m.1.cv1.bn.weight",
+    "model.4.m.1.cv1.bn.bias": "model.4.m.1.cv1.bn.bias",
+    "model.4.m.1.cv1.bn.running_mean": "model.4.m.1.cv1.bn.running_mean",
+    "model.4.m.1.cv1.bn.running_var": "model.4.m.1.cv1.bn.running_var",
+    "model.4.m.1.cv1.bn.num_batches_tracked": "model.4.m.1.cv1.bn.num_batches_tracked",
+    "model.6.conv.weight": "model.5.conv.weight",
+    "model.6.bn.weight": "model.5.bn.weight",
+    "model.6.bn.bias": "model.5.bn.bias",
+    "model.6.bn.running_mean": "model.5.bn.running_mean",
+    "model.6.bn.running_var": "model.5.bn.running_var",
+    "model.6.bn.num_batches_tracked": "model.5.bn.num_batches_tracked",
+    "model.7.cv1.conv.weight": "model.6.cv1.conv.weight",
+    "model.7.cv1.bn.weight": "model.6.cv1.bn.weight",
+    "model.7.cv1.bn.bias": "model.6.cv1.bn.bias",
+    "model.7.cv1.bn.running_mean": "model.6.cv1.bn.running_mean",
+    "model.7.cv1.bn.running_var": "model.6.cv1.bn.running_var",
+    "model.7.cv1.bn.num_batches_tracked": "model.6.cv1.bn.num_batches_tracked",
+    "model.7.cv2.conv.weight": "model.6.cv2.conv.weight",
+    "model.7.cv2.bn.weight": "model.6.cv2.bn.weight",
+    "model.7.cv2.bn.bias": "model.6.cv2.bn.bias",
+    "model.7.cv2.bn.running_mean": "model.6.cv2.bn.running_mean",
+    "model.7.cv2.bn.running_var": "model.6.cv2.bn.running_var",
+    "model.7.cv2.bn.num_batches_tracked": "model.6.cv2.bn.num_batches_tracked",
+    "model.7.m.0.cv1.conv.weight": "model.6.m.0.cv1.conv.weight",
+    "model.7.m.0.cv1.bn.weight": "model.6.m.0.cv1.bn.weight",
+    "model.7.m.0.cv1.bn.bias": "model.6.m.0.cv1.bn.bias",
+    "model.7.m.0.cv1.bn.running_mean": "model.6.m.0.cv1.bn.running_mean",
+    "model.7.m.0.cv1.bn.running_var": "model.6.m.0.cv1.bn.running_var",
+    "model.7.m.0.cv1.bn.num_batches_tracked": "model.6.m.0.cv1.bn.num_batches_tracked",
+    "model.7.m.1.cv1.conv.weight": "model.6.m.1.cv1.conv.weight",
+    "model.7.m.1.cv1.bn.weight": "model.6.m.1.cv1.bn.weight",
+    "model.7.m.1.cv1.bn.bias": "model.6.m.1.cv1.bn.bias",
+    "model.7.m.1.cv1.bn.running_mean": "model.6.m.1.cv1.bn.running_mean",
+    "model.7.m.1.cv1.bn.running_var": "model.6.m.1.cv1.bn.running_var",
+    "model.7.m.1.cv1.bn.num_batches_tracked": "model.6.m.1.cv1.bn.num_batches_tracked",
+    "model.9.conv.weight": "model.7.conv.weight",
+    "model.9.bn.weight": "model.7.bn.weight",
+    "model.9.bn.bias": "model.7.bn.bias",
+    "model.9.bn.running_mean": "model.7.bn.running_mean",
+    "model.9.bn.running_var": "model.7.bn.running_var",
+    "model.9.bn.num_batches_tracked": "model.7.bn.num_batches_tracked",
+    "model.10.cv1.conv.weight": "model.8.cv1.conv.weight",
+    "model.10.cv1.bn.weight": "model.8.cv1.bn.weight",
+    "model.10.cv1.bn.bias": "model.8.cv1.bn.bias",
+    "model.10.cv1.bn.running_mean": "model.8.cv1.bn.running_mean",
+    "model.10.cv1.bn.running_var": "model.8.cv1.bn.running_var",
+    "model.10.cv1.bn.num_batches_tracked": "model.8.cv1.bn.num_batches_tracked",
+    "model.10.cv2.conv.weight": "model.8.cv2.conv.weight",
+    "model.10.cv2.bn.weight": "model.8.cv2.bn.weight",
+    "model.10.cv2.bn.bias": "model.8.cv2.bn.bias",
+    "model.10.cv2.bn.running_mean": "model.8.cv2.bn.running_mean",
+    "model.10.cv2.bn.running_var": "model.8.cv2.bn.running_var",
+    "model.10.cv2.bn.num_batches_tracked": "model.8.cv2.bn.num_batches_tracked",
+    "model.10.m.0.cv1.conv.weight": "model.8.m.0.cv1.conv.weight",
+    "model.10.m.0.cv1.bn.weight": "model.8.m.0.cv1.bn.weight",
+    "model.10.m.0.cv1.bn.bias": "model.8.m.0.cv1.bn.bias",
+    "model.10.m.0.cv1.bn.running_mean": "model.8.m.0.cv1.bn.running_mean",
+    "model.10.m.0.cv1.bn.running_var": "model.8.m.0.cv1.bn.running_var",
+    "model.10.m.0.cv1.bn.num_batches_tracked": "model.8.m.0.cv1.bn.num_batches_tracked",
+    "model.12.cv1.conv.weight": "model.9.cv1.conv.weight",
+    "model.12.cv1.bn.weight": "model.9.cv1.bn.weight",
+    "model.12.cv1.bn.bias": "model.9.cv1.bn.bias",
+    "model.12.cv1.bn.running_mean": "model.9.cv1.bn.running_mean",
+    "model.12.cv1.bn.running_var": "model.9.cv1.bn.running_var",
+    "model.12.cv1.bn.num_batches_tracked": "model.9.cv1.bn.num_batches_tracked",
+    "model.12.cv2.conv.weight": "model.9.cv2.conv.weight",
+    "model.12.cv2.bn.weight": "model.9.cv2.bn.weight",
+    "model.12.cv2.bn.bias": "model.9.cv2.bn.bias",
+    "model.12.cv2.bn.running_mean": "model.9.cv2.bn.running_mean",
+    "model.12.cv2.bn.running_var": "model.9.cv2.bn.running_var",
+    "model.12.cv2.bn.num_batches_tracked": "model.9.cv2.bn.num_batches_tracked",
+    "model.15.cv1.conv.weight": "model.12.cv1.conv.weight",
+    "model.15.cv1.bn.weight": "model.12.cv1.bn.weight",
+    "model.15.cv1.bn.bias": "model.12.cv1.bn.bias",
+    "model.15.cv1.bn.running_mean": "model.12.cv1.bn.running_mean",
+    "model.15.cv1.bn.running_var": "model.12.cv1.bn.running_var",
+    "model.15.cv1.bn.num_batches_tracked": "model.12.cv1.bn.num_batches_tracked",
+    "model.15.cv2.conv.weight": "model.12.cv2.conv.weight",
+    "model.15.cv2.bn.weight": "model.12.cv2.bn.weight",
+    "model.15.cv2.bn.bias": "model.12.cv2.bn.bias",
+    "model.15.cv2.bn.running_mean": "model.12.cv2.bn.running_mean",
+    "model.15.cv2.bn.running_var": "model.12.cv2.bn.running_var",
+    "model.15.cv2.bn.num_batches_tracked": "model.12.cv2.bn.num_batches_tracked",
+    "model.15.m.0.cv1.conv.weight": "model.12.m.0.cv1.conv.weight",
+    "model.15.m.0.cv1.bn.weight": "model.12.m.0.cv1.bn.weight",
+    "model.15.m.0.cv1.bn.bias": "model.12.m.0.cv1.bn.bias",
+    "model.15.m.0.cv1.bn.running_mean": "model.12.m.0.cv1.bn.running_mean",
+    "model.15.m.0.cv1.bn.running_var": "model.12.m.0.cv1.bn.running_var",
+    "model.15.m.0.cv1.bn.num_batches_tracked": "model.12.m.0.cv1.bn.num_batches_tracked",
+    "model.15.m.0.cv2.conv.weight": "model.12.m.0.cv2.conv.weight",
+    "model.15.m.0.cv2.bn.weight": "model.12.m.0.cv2.bn.weight",
+    "model.15.m.0.cv2.bn.bias": "model.12.m.0.cv2.bn.bias",
+    "model.15.m.0.cv2.bn.running_mean": "model.12.m.0.cv2.bn.running_mean",
+    "model.15.m.0.cv2.bn.running_var": "model.12.m.0.cv2.bn.running_var",
+    "model.15.m.0.cv2.bn.num_batches_tracked": "model.12.m.0.cv2.bn.num_batches_tracked",
+    "model.18.cv1.conv.weight": "model.15.cv1.conv.weight",
+    "model.18.cv1.bn.weight": "model.15.cv1.bn.weight",
+    "model.18.cv1.bn.bias": "model.15.cv1.bn.bias",
+    "model.18.cv1.bn.running_mean": "model.15.cv1.bn.running_mean",
+    "model.18.cv1.bn.running_var": "model.15.cv1.bn.running_var",
+    "model.18.cv1.bn.num_batches_tracked": "model.15.cv1.bn.num_batches_tracked",
+    "model.18.cv2.conv.weight": "model.15.cv2.conv.weight",
+    "model.18.cv2.bn.weight": "model.15.cv2.bn.weight",
+    "model.18.cv2.bn.bias": "model.15.cv2.bn.bias",
+    "model.18.cv2.bn.running_mean": "model.15.cv2.bn.running_mean",
+    "model.18.cv2.bn.running_var": "model.15.cv2.bn.running_var",
+    "model.18.cv2.bn.num_batches_tracked": "model.15.cv2.bn.num_batches_tracked",
+    "model.18.m.0.cv1.conv.weight": "model.15.m.0.cv1.conv.weight",
+    "model.18.m.0.cv1.bn.weight": "model.15.m.0.cv1.bn.weight",
+    "model.18.m.0.cv1.bn.bias": "model.15.m.0.cv1.bn.bias",
+    "model.18.m.0.cv1.bn.running_mean": "model.15.m.0.cv1.bn.running_mean",
+    "model.18.m.0.cv1.bn.running_var": "model.15.m.0.cv1.bn.running_var",
+    "model.18.m.0.cv1.bn.num_batches_tracked": "model.15.m.0.cv1.bn.num_batches_tracked",
+    "model.18.m.0.cv2.conv.weight": "model.15.m.0.cv2.conv.weight",
+    "model.18.m.0.cv2.bn.weight": "model.15.m.0.cv2.bn.weight",
+    "model.18.m.0.cv2.bn.bias": "model.15.m.0.cv2.bn.bias",
+    "model.18.m.0.cv2.bn.running_mean": "model.15.m.0.cv2.bn.running_mean",
+    "model.18.m.0.cv2.bn.running_var": "model.15.m.0.cv2.bn.running_var",
+    "model.18.m.0.cv2.bn.num_batches_tracked": "model.15.m.0.cv2.bn.num_batches_tracked",
+    "model.19.conv.weight": "model.16.conv.weight",
+    "model.19.bn.weight": "model.16.bn.weight",
+    "model.19.bn.bias": "model.16.bn.bias",
+    "model.19.bn.running_mean": "model.16.bn.running_mean",
+    "model.19.bn.running_var": "model.16.bn.running_var",
+    "model.19.bn.num_batches_tracked": "model.16.bn.num_batches_tracked",
+    "model.21.cv1.conv.weight": "model.18.cv1.conv.weight",
+    "model.21.cv1.bn.weight": "model.18.cv1.bn.weight",
+    "model.21.cv1.bn.bias": "model.18.cv1.bn.bias",
+    "model.21.cv1.bn.running_mean": "model.18.cv1.bn.running_mean",
+    "model.21.cv1.bn.running_var": "model.18.cv1.bn.running_var",
+    "model.21.cv1.bn.num_batches_tracked": "model.18.cv1.bn.num_batches_tracked",
+    "model.21.cv2.conv.weight": "model.18.cv2.conv.weight",
+    "model.21.cv2.bn.weight": "model.18.cv2.bn.weight",
+    "model.21.cv2.bn.bias": "model.18.cv2.bn.bias",
+    "model.21.cv2.bn.running_mean": "model.18.cv2.bn.running_mean",
+    "model.21.cv2.bn.running_var": "model.18.cv2.bn.running_var",
+    "model.21.cv2.bn.num_batches_tracked": "model.18.cv2.bn.num_batches_tracked",
+    "model.21.m.0.cv1.conv.weight": "model.18.m.0.cv1.conv.weight",
+    "model.21.m.0.cv1.bn.weight": "model.18.m.0.cv1.bn.weight",
+    "model.21.m.0.cv1.bn.bias": "model.18.m.0.cv1.bn.bias",
+    "model.21.m.0.cv1.bn.running_mean": "model.18.m.0.cv1.bn.running_mean",
+    "model.21.m.0.cv1.bn.running_var": "model.18.m.0.cv1.bn.running_var",
+    "model.21.m.0.cv1.bn.num_batches_tracked": "model.18.m.0.cv1.bn.num_batches_tracked",
+    "model.21.m.0.cv2.conv.weight": "model.18.m.0.cv2.conv.weight",
+    "model.21.m.0.cv2.bn.weight": "model.18.m.0.cv2.bn.weight",
+    "model.21.m.0.cv2.bn.bias": "model.18.m.0.cv2.bn.bias",
+    "model.21.m.0.cv2.bn.running_mean": "model.18.m.0.cv2.bn.running_mean",
+    "model.21.m.0.cv2.bn.running_var": "model.18.m.0.cv2.bn.running_var",
+    "model.21.m.0.cv2.bn.num_batches_tracked": "model.18.m.0.cv2.bn.num_batches_tracked",
+    "model.22.conv.weight": "model.19.conv.weight",
+    "model.22.bn.weight": "model.19.bn.weight",
+    "model.22.bn.bias": "model.19.bn.bias",
+    "model.22.bn.running_mean": "model.19.bn.running_mean",
+    "model.22.bn.running_var": "model.19.bn.running_var",
+    "model.22.bn.num_batches_tracked": "model.19.bn.num_batches_tracked",
+    "model.24.cv1.conv.weight": "model.21.cv1.conv.weight",
+    "model.24.cv1.bn.weight": "model.21.cv1.bn.weight",
+    "model.24.cv1.bn.bias": "model.21.cv1.bn.bias",
+    "model.24.cv1.bn.running_mean": "model.21.cv1.bn.running_mean",
+    "model.24.cv1.bn.running_var": "model.21.cv1.bn.running_var",
+    "model.24.cv1.bn.num_batches_tracked": "model.21.cv1.bn.num_batches_tracked",
+    "model.24.cv2.conv.weight": "model.21.cv2.conv.weight",
+    "model.24.cv2.bn.weight": "model.21.cv2.bn.weight",
+    "model.24.cv2.bn.bias": "model.21.cv2.bn.bias",
+    "model.24.cv2.bn.running_mean": "model.21.cv2.bn.running_mean",
+    "model.24.cv2.bn.running_var": "model.21.cv2.bn.running_var",
+    "model.24.cv2.bn.num_batches_tracked": "model.21.cv2.bn.num_batches_tracked",
+    "model.24.m.0.cv1.conv.weight": "model.21.m.0.cv1.conv.weight",
+    "model.24.m.0.cv1.bn.weight": "model.21.m.0.cv1.bn.weight",
+    "model.24.m.0.cv1.bn.bias": "model.21.m.0.cv1.bn.bias",
+    "model.24.m.0.cv1.bn.running_mean": "model.21.m.0.cv1.bn.running_mean",
+    "model.24.m.0.cv1.bn.running_var": "model.21.m.0.cv1.bn.running_var",
+    "model.24.m.0.cv1.bn.num_batches_tracked": "model.21.m.0.cv1.bn.num_batches_tracked",
+    "model.24.m.0.cv2.conv.weight": "model.21.m.0.cv2.conv.weight",
+    "model.24.m.0.cv2.bn.weight": "model.21.m.0.cv2.bn.weight",
+    "model.24.m.0.cv2.bn.bias": "model.21.m.0.cv2.bn.bias",
+    "model.24.m.0.cv2.bn.running_mean": "model.21.m.0.cv2.bn.running_mean",
+    "model.24.m.0.cv2.bn.running_var": "model.21.m.0.cv2.bn.running_var",
+    "model.24.m.0.cv2.bn.num_batches_tracked": "model.21.m.0.cv2.bn.num_batches_tracked",
+    "model.25.cv2.0.0.conv.weight": "model.22.cv2.0.0.conv.weight",
+    "model.25.cv2.0.0.bn.weight": "model.22.cv2.0.0.bn.weight",
+    "model.25.cv2.0.0.bn.bias": "model.22.cv2.0.0.bn.bias",
+    "model.25.cv2.0.0.bn.running_mean": "model.22.cv2.0.0.bn.running_mean",
+    "model.25.cv2.0.0.bn.running_var": "model.22.cv2.0.0.bn.running_var",
+    "model.25.cv2.0.0.bn.num_batches_tracked": "model.22.cv2.0.0.bn.num_batches_tracked",
+    "model.25.cv2.0.1.conv.weight": "model.22.cv2.0.1.conv.weight",
+    "model.25.cv2.0.1.bn.weight": "model.22.cv2.0.1.bn.weight",
+    "model.25.cv2.0.1.bn.bias": "model.22.cv2.0.1.bn.bias",
+    "model.25.cv2.0.1.bn.running_mean": "model.22.cv2.0.1.bn.running_mean",
+    "model.25.cv2.0.1.bn.running_var": "model.22.cv2.0.1.bn.running_var",
+    "model.25.cv2.0.1.bn.num_batches_tracked": "model.22.cv2.0.1.bn.num_batches_tracked",
+    "model.25.cv2.0.2.weight": "model.22.cv2.0.2.weight",
+    "model.25.cv2.0.2.bias": "model.22.cv2.0.2.bias",
+    "model.25.cv2.1.0.conv.weight": "model.22.cv2.1.0.conv.weight",
+    "model.25.cv2.1.0.bn.weight": "model.22.cv2.1.0.bn.weight",
+    "model.25.cv2.1.0.bn.bias": "model.22.cv2.1.0.bn.bias",
+    "model.25.cv2.1.0.bn.running_mean": "model.22.cv2.1.0.bn.running_mean",
+    "model.25.cv2.1.0.bn.running_var": "model.22.cv2.1.0.bn.running_var",
+    "model.25.cv2.1.0.bn.num_batches_tracked": "model.22.cv2.1.0.bn.num_batches_tracked",
+    "model.25.cv2.1.1.conv.weight": "model.22.cv2.1.1.conv.weight",
+    "model.25.cv2.1.1.bn.weight": "model.22.cv2.1.1.bn.weight",
+    "model.25.cv2.1.1.bn.bias": "model.22.cv2.1.1.bn.bias",
+    "model.25.cv2.1.1.bn.running_mean": "model.22.cv2.1.1.bn.running_mean",
+    "model.25.cv2.1.1.bn.running_var": "model.22.cv2.1.1.bn.running_var",
+    "model.25.cv2.1.1.bn.num_batches_tracked": "model.22.cv2.1.1.bn.num_batches_tracked",
+    "model.25.cv2.1.2.weight": "model.22.cv2.1.2.weight",
+    "model.25.cv2.1.2.bias": "model.22.cv2.1.2.bias",
+    "model.25.cv2.2.0.conv.weight": "model.22.cv2.2.0.conv.weight",
+    "model.25.cv2.2.0.bn.weight": "model.22.cv2.2.0.bn.weight",
+    "model.25.cv2.2.0.bn.bias": "model.22.cv2.2.0.bn.bias",
+    "model.25.cv2.2.0.bn.running_mean": "model.22.cv2.2.0.bn.running_mean",
+    "model.25.cv2.2.0.bn.running_var": "model.22.cv2.2.0.bn.running_var",
+    "model.25.cv2.2.0.bn.num_batches_tracked": "model.22.cv2.2.0.bn.num_batches_tracked",
+    "model.25.cv2.2.1.conv.weight": "model.22.cv2.2.1.conv.weight",
+    "model.25.cv2.2.1.bn.weight": "model.22.cv2.2.1.bn.weight",
+    "model.25.cv2.2.1.bn.bias": "model.22.cv2.2.1.bn.bias",
+    "model.25.cv2.2.1.bn.running_mean": "model.22.cv2.2.1.bn.running_mean",
+    "model.25.cv2.2.1.bn.running_var": "model.22.cv2.2.1.bn.running_var",
+    "model.25.cv2.2.1.bn.num_batches_tracked": "model.22.cv2.2.1.bn.num_batches_tracked",
+    "model.25.cv2.2.2.weight": "model.22.cv2.2.2.weight",
+    "model.25.cv2.2.2.bias": "model.22.cv2.2.2.bias",
+    "model.25.cv3.0.0.bn.num_batches_tracked": "model.22.cv3.0.0.bn.num_batches_tracked",
+    "model.25.cv3.0.1.bn.num_batches_tracked": "model.22.cv3.0.1.bn.num_batches_tracked",
+    "model.25.cv3.1.0.bn.num_batches_tracked": "model.22.cv3.1.0.bn.num_batches_tracked",
+    "model.25.cv3.1.1.bn.num_batches_tracked": "model.22.cv3.1.1.bn.num_batches_tracked",
+    "model.25.cv3.2.0.bn.num_batches_tracked": "model.22.cv3.2.0.bn.num_batches_tracked",
+    "model.25.cv3.2.1.bn.num_batches_tracked": "model.22.cv3.2.1.bn.num_batches_tracked",
+    "model.25.dfl.conv.weight": "model.22.dfl.conv.weight"
+  },
+  "skipped_source_tensors": [
+    {
+      "source": "model.2.m.0.cv2.conv.weight",
+      "target": "model.2.m.0.cv2.conv.weight",
+      "source_shape": [
+        16,
+        16,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.2.m.0.cv2.bn.weight",
+      "target": "model.2.m.0.cv2.bn.weight",
+      "source_shape": [
+        16
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.2.m.0.cv2.bn.bias",
+      "target": "model.2.m.0.cv2.bn.bias",
+      "source_shape": [
+        16
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.2.m.0.cv2.bn.running_mean",
+      "target": "model.2.m.0.cv2.bn.running_mean",
+      "source_shape": [
+        16
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.2.m.0.cv2.bn.running_var",
+      "target": "model.2.m.0.cv2.bn.running_var",
+      "source_shape": [
+        16
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.2.m.0.cv2.bn.num_batches_tracked",
+      "target": "model.2.m.0.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.conv.weight",
+      "target": "model.4.m.0.cv2.conv.weight",
+      "source_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.bn.weight",
+      "target": "model.4.m.0.cv2.bn.weight",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.bn.bias",
+      "target": "model.4.m.0.cv2.bn.bias",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.bn.running_mean",
+      "target": "model.4.m.0.cv2.bn.running_mean",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.bn.running_var",
+      "target": "model.4.m.0.cv2.bn.running_var",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.0.cv2.bn.num_batches_tracked",
+      "target": "model.4.m.0.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.conv.weight",
+      "target": "model.4.m.1.cv2.conv.weight",
+      "source_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.bn.weight",
+      "target": "model.4.m.1.cv2.bn.weight",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.bn.bias",
+      "target": "model.4.m.1.cv2.bn.bias",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.bn.running_mean",
+      "target": "model.4.m.1.cv2.bn.running_mean",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.bn.running_var",
+      "target": "model.4.m.1.cv2.bn.running_var",
+      "source_shape": [
+        32
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.4.m.1.cv2.bn.num_batches_tracked",
+      "target": "model.4.m.1.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.conv.weight",
+      "target": "model.7.m.0.cv2.conv.weight",
+      "source_shape": [
+        64,
+        64,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.bn.weight",
+      "target": "model.7.m.0.cv2.bn.weight",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.bn.bias",
+      "target": "model.7.m.0.cv2.bn.bias",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.bn.running_mean",
+      "target": "model.7.m.0.cv2.bn.running_mean",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.bn.running_var",
+      "target": "model.7.m.0.cv2.bn.running_var",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.0.cv2.bn.num_batches_tracked",
+      "target": "model.7.m.0.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.conv.weight",
+      "target": "model.7.m.1.cv2.conv.weight",
+      "source_shape": [
+        64,
+        64,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.bn.weight",
+      "target": "model.7.m.1.cv2.bn.weight",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.bn.bias",
+      "target": "model.7.m.1.cv2.bn.bias",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.bn.running_mean",
+      "target": "model.7.m.1.cv2.bn.running_mean",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.bn.running_var",
+      "target": "model.7.m.1.cv2.bn.running_var",
+      "source_shape": [
+        64
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.6.m.1.cv2.bn.num_batches_tracked",
+      "target": "model.7.m.1.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.conv.weight",
+      "target": "model.10.m.0.cv2.conv.weight",
+      "source_shape": [
+        128,
+        128,
+        3,
+        3
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.bn.weight",
+      "target": "model.10.m.0.cv2.bn.weight",
+      "source_shape": [
+        128
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.bn.bias",
+      "target": "model.10.m.0.cv2.bn.bias",
+      "source_shape": [
+        128
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.bn.running_mean",
+      "target": "model.10.m.0.cv2.bn.running_mean",
+      "source_shape": [
+        128
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.bn.running_var",
+      "target": "model.10.m.0.cv2.bn.running_var",
+      "source_shape": [
+        128
+      ],
+      "target_shape": null
+    },
+    {
+      "source": "model.8.m.0.cv2.bn.num_batches_tracked",
+      "target": "model.10.m.0.cv2.bn.num_batches_tracked",
+      "source_shape": [],
+      "target_shape": null
+    },
+    {
+      "source": "model.22.cv3.0.0.conv.weight",
+      "target": "model.25.cv3.0.0.conv.weight",
+      "source_shape": [
+        80,
+        64,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        64,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.0.bn.weight",
+      "target": "model.25.cv3.0.0.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.0.bn.bias",
+      "target": "model.25.cv3.0.0.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.0.bn.running_mean",
+      "target": "model.25.cv3.0.0.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.0.bn.running_var",
+      "target": "model.25.cv3.0.0.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.1.conv.weight",
+      "target": "model.25.cv3.0.1.conv.weight",
+      "source_shape": [
+        80,
+        80,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        64,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.1.bn.weight",
+      "target": "model.25.cv3.0.1.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.1.bn.bias",
+      "target": "model.25.cv3.0.1.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.1.bn.running_mean",
+      "target": "model.25.cv3.0.1.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.1.bn.running_var",
+      "target": "model.25.cv3.0.1.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.2.weight",
+      "target": "model.25.cv3.0.2.weight",
+      "source_shape": [
+        80,
+        80,
+        1,
+        1
+      ],
+      "target_shape": [
+        16,
+        64,
+        1,
+        1
+      ]
+    },
+    {
+      "source": "model.22.cv3.0.2.bias",
+      "target": "model.25.cv3.0.2.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        16
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.0.conv.weight",
+      "target": "model.25.cv3.1.0.conv.weight",
+      "source_shape": [
+        80,
+        128,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        128,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.0.bn.weight",
+      "target": "model.25.cv3.1.0.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.0.bn.bias",
+      "target": "model.25.cv3.1.0.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.0.bn.running_mean",
+      "target": "model.25.cv3.1.0.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.0.bn.running_var",
+      "target": "model.25.cv3.1.0.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.1.conv.weight",
+      "target": "model.25.cv3.1.1.conv.weight",
+      "source_shape": [
+        80,
+        80,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        64,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.1.bn.weight",
+      "target": "model.25.cv3.1.1.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.1.bn.bias",
+      "target": "model.25.cv3.1.1.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.1.bn.running_mean",
+      "target": "model.25.cv3.1.1.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.1.bn.running_var",
+      "target": "model.25.cv3.1.1.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.2.weight",
+      "target": "model.25.cv3.1.2.weight",
+      "source_shape": [
+        80,
+        80,
+        1,
+        1
+      ],
+      "target_shape": [
+        16,
+        64,
+        1,
+        1
+      ]
+    },
+    {
+      "source": "model.22.cv3.1.2.bias",
+      "target": "model.25.cv3.1.2.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        16
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.0.conv.weight",
+      "target": "model.25.cv3.2.0.conv.weight",
+      "source_shape": [
+        80,
+        256,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        256,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.0.bn.weight",
+      "target": "model.25.cv3.2.0.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.0.bn.bias",
+      "target": "model.25.cv3.2.0.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.0.bn.running_mean",
+      "target": "model.25.cv3.2.0.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.0.bn.running_var",
+      "target": "model.25.cv3.2.0.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.1.conv.weight",
+      "target": "model.25.cv3.2.1.conv.weight",
+      "source_shape": [
+        80,
+        80,
+        3,
+        3
+      ],
+      "target_shape": [
+        64,
+        64,
+        3,
+        3
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.1.bn.weight",
+      "target": "model.25.cv3.2.1.bn.weight",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.1.bn.bias",
+      "target": "model.25.cv3.2.1.bn.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.1.bn.running_mean",
+      "target": "model.25.cv3.2.1.bn.running_mean",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.1.bn.running_var",
+      "target": "model.25.cv3.2.1.bn.running_var",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        64
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.2.weight",
+      "target": "model.25.cv3.2.2.weight",
+      "source_shape": [
+        80,
+        80,
+        1,
+        1
+      ],
+      "target_shape": [
+        16,
+        64,
+        1,
+        1
+      ]
+    },
+    {
+      "source": "model.22.cv3.2.2.bias",
+      "target": "model.25.cv3.2.2.bias",
+      "source_shape": [
+        80
+      ],
+      "target_shape": [
+        16
+      ]
+    }
+  ],
+  "best_csv_epoch_by_ultralytics_fitness": 266,
+  "training_snapshots": [
+    {
+      "epoch": "1",
+      "train/box_loss": "2.49162",
+      "train/cls_loss": "4.47747",
+      "metrics/mAP50(B)": "0",
+      "metrics/mAP50-95(B)": "0",
+      "val/box_loss": "nan",
+      "val/cls_loss": "nan",
+      "lr/pg0": "0.0707895"
+    },
+    {
+      "epoch": "10",
+      "train/box_loss": "1.8605",
+      "train/cls_loss": "3.3013",
+      "metrics/mAP50(B)": "0.01814",
+      "metrics/mAP50-95(B)": "0.00578",
+      "val/box_loss": "2.65859",
+      "val/cls_loss": "3.82121",
+      "lr/pg0": "0.00997803"
+    },
+    {
+      "epoch": "25",
+      "train/box_loss": "1.61504",
+      "train/cls_loss": "2.77317",
+      "metrics/mAP50(B)": "0.16534",
+      "metrics/mAP50-95(B)": "0.08159",
+      "val/box_loss": "1.83831",
+      "val/cls_loss": "2.84183",
+      "lr/pg0": "0.00984449"
+    },
+    {
+      "epoch": "50",
+      "train/box_loss": "1.4005",
+      "train/cls_loss": "2.21722",
+      "metrics/mAP50(B)": "0.31613",
+      "metrics/mAP50-95(B)": "0.16485",
+      "val/box_loss": "1.59788",
+      "val/cls_loss": "2.13577",
+      "lr/pg0": "0.00936251"
+    },
+    {
+      "epoch": "100",
+      "train/box_loss": "1.20038",
+      "train/cls_loss": "1.71161",
+      "metrics/mAP50(B)": "0.48381",
+      "metrics/mAP50-95(B)": "0.30403",
+      "val/box_loss": "1.29796",
+      "val/cls_loss": "1.6582",
+      "lr/pg0": "0.00756976"
+    },
+    {
+      "epoch": "150",
+      "train/box_loss": "0.98395",
+      "train/cls_loss": "1.27584",
+      "metrics/mAP50(B)": "0.55988",
+      "metrics/mAP50-95(B)": "0.37326",
+      "val/box_loss": "1.16444",
+      "val/cls_loss": "1.48743",
+      "lr/pg0": "0.00510184"
+    },
+    {
+      "epoch": "200",
+      "train/box_loss": "0.88633",
+      "train/cls_loss": "1.08412",
+      "metrics/mAP50(B)": "0.60995",
+      "metrics/mAP50-95(B)": "0.42355",
+      "val/box_loss": "1.13058",
+      "val/cls_loss": "1.39502",
+      "lr/pg0": "0.00262003"
+    },
+    {
+      "epoch": "250",
+      "train/box_loss": "0.80382",
+      "train/cls_loss": "0.95747",
+      "metrics/mAP50(B)": "0.63934",
+      "metrics/mAP50-95(B)": "0.44844",
+      "val/box_loss": "1.07739",
+      "val/cls_loss": "1.32814",
+      "lr/pg0": "0.000789327"
+    },
+    {
+      "epoch": "300",
+      "train/box_loss": "0.59771",
+      "train/cls_loss": "0.60201",
+      "metrics/mAP50(B)": "0.61282",
+      "metrics/mAP50-95(B)": "0.42069",
+      "val/box_loss": "1.07348",
+      "val/cls_loss": "1.36283",
+      "lr/pg0": "0.000100271"
+    }
+  ],
+  "scope": "Original source checkpoint and initialization downloaded from completed Kaggle notebook version 2; all 283 mapped tensors compared exactly; actual initialization reloaded through PaddyTrainer.setup_model and all 1471 state entries preserved.",
+  "actual_kaggle_initialization_verified": true,
+  "actual_kaggle_source_matches_local_source_sha256": true,
+  "actual_kaggle_transferred_tensors_exactly_match_source": 283,
+  "actual_kaggle_initialization_sha256": "ac0675e48b3bcd95d7a481da076b09401c247225b6c91a8ec4485b75e23bc291",
+  "actual_kaggle_initialization_preserved_by_trainer_setup": true,
+  "nonfinite_training_history_values": [
+    {
+      "epoch": 1,
+      "metric": "val/box_loss",
+      "value": "nan"
+    },
+    {
+      "epoch": 1,
+      "metric": "val/cls_loss",
+      "value": "nan"
+    },
+    {
+      "epoch": 1,
+      "metric": "val/dfl_loss",
+      "value": "nan"
+    }
+  ],
+  "training_optimizer": "AdamW",
+  "training_initial_learning_rate": 0.01,
+  "training_warmup_bias_learning_rate": 0.1,
+  "early_validation_cls_loss_epoch_3": 262.301,
+  "original_initialization_checkpoint": "initialization/paddy-yolo-ema-dysample_init.pt"
+}

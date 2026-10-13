@@ -1,0 +1,14 @@
+{
+  "kernel": "dmrashidpferrer/paddy-yolo-ema-dysample-fold0",
+  "url": "https://www.kaggle.com/code/dmrashidpferrer/paddy-yolo-ema-dysample-fold0",
+  "version": 1,
+  "submitted_at_utc": "2026-10-13T04:04:44.057080+00:00",
+  "accelerator": "NvidiaTeslaT4",
+  "is_private": true,
+  "source_sha256": "47e11b4b8ce5352a7175656e2876db56b5aea26769b90ceab5ba32be0134ea34",
+  "local_tests": "96 passed",
+  "status": "KernelWorkerStatus.ERROR",
+  "failure_message": "",
+  "failure_stage": "preflight_tests",
+  "failure_reason": "Unused Ultralytics Ray Tune callback calls removed Ray _get_session API"
+}

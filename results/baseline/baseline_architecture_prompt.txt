@@ -1,0 +1,51 @@
+Use case: infographic-diagram.
+Asset type: a publication-quality architecture figure for this repository, saved as a PNG.
+Create a high-resolution landscape diagram titled "Paddy-YOLO Baseline Architecture". The current model is configs/paddy-yolo.yaml at nano scale (depth 0.33, width 0.25), 16 classes. Match the implemented graph below exactly. White background, restrained teal backbone, blue FPN/PAN neck, purple Detect group, amber training-only callout. Clean flat technical schematic, dark crisp sans-serif text, spacious layout, orthogonal arrows and generous gutters. No photographs, decorative 3D, logos, watermarks or invented performance numbers. Aim for 2560 x 1600 or larger with readable labels.
+
+Layout: Network in upper two-thirds. Four sections from left to right: Backbone; Neck / top-down FPN; Neck / bottom-up PAN; Detection. Lower strip: one RGGConv detail inset and a separate training-only loss box. Use sufficient spacing to make every directed edge unambiguous.
+
+Backbone aggregated stages top-to-bottom; shapes are H x W x C for a 640-pixel input:
+RGB image | 640 x 640 x 3
+-> Conv 3x3 / s2 | 320 x 320 x 16
+-> Conv 3x3 / s2 + RGG (n=1) | P2/4 | 160 x 160 x 32
+-> Conv 3x3 / s2 + RGG (n=2) | P3/8 | 80 x 80 x 64
+-> Conv 3x3 / s2 + RGG (n=2) | P4/16 | 40 x 40 x 128
+-> Conv 3x3 / s2 + RGG (n=1) | P5/32 | 20 x 20 x 256
+-> SPPF | 20 x 20 x 256.
+Exactly four RGG backbone blocks. The repeats n=1,2,2,1 are effective repeats after nano scaling.
+
+Neck: exactly four Concat + C2f fusion nodes, with the following connections:
+A: SPPF -> Upsample x2 -> Concat + C2f | 40 x 40 x 128. Backbone P4 also enters A's Concat.
+B: A -> Upsample x2 -> Concat + C2f | P3/8 | 80 x 80 x 64. Backbone P3 also enters B's Concat.
+C: B -> Conv 3x3 / s2 -> Concat + C2f | P4/16 | 40 x 40 x 128. A also enters C's Concat through a lateral skip.
+D: C -> Conv 3x3 / s2 -> Concat + C2f | P5/32 | 20 x 20 x 256. SPPF also enters D's Concat through a lateral skip.
+Main FPN then PAN data flow is SPPF -> A -> B -> C -> D. Keep this direction explicit. These are the only feature fusion connections. Each neck C2f has effective n=1.
+
+Detection: B -> P3 head (stride 8); C -> P4 head (stride 16); D -> P5 head (stride 32).
+Each scale has decoupled box regression and 16 class-score branches; label the shared group "Detect: P3 / P4 / P5".
+Their combined output -> Decode + NMS -> "Pest detections (16 classes)".
+No P2 detection head, no attention modules, and no objectness branch.
+
+Lower inset titled "Inside RGGConv": clearly draw a sequential chain
+Input -> RepConv -> GhostConv 1 -> GhostConv 2.
+The output of EACH of these three blocks (RepConv, GhostConv 1, GhostConv 2) is tapped into one Concat -> Conv 1x1 -> Output.
+This is sequential with three output taps, not three independent parallel branches.
+Under each GhostConv label, or in a shared caption: "3x3 primary conv + 5x5 depthwise conv".
+Caption: "RGG: Conv 1x1 -> split -> residual bottlenecks -> concat -> Conv 1x1".
+Small note: "Bottleneck: Conv 3x3 -> RGGConv + residual".
+Small deployment note: "RepConv branches fuse to one 3x3 convolution".
+
+Separate lower-right amber box title "Training only". Exact text:
+"DIMIoU Strategy H + BCE + DFL"
+"Loss gains: 7.5 / 0.5 / 1.5".
+Use a dotted link from Detect to this box; do not place the loss in the inference path.
+
+Footer: "Source: configs/paddy-yolo.yaml | Nano: depth 0.33, width 0.25 | Shapes: H x W x C".
+All labels must be legible and correctly spelled. Show exactly the specified nodes, shapes, lateral skips and detection connections. Do not add parameter counts or paper-fidelity claims.
+
+Applied edit prompt:
+Use case: scientific-educational, precise architecture-diagram correction. Edit the supplied architecture diagram, preserving its title, layout, typography, colors, background and all correct text, all shapes, all other arrows. Make exactly these technical corrections:
+1. The P3 head must receive the output of node B (80 x 80 x 64), BEFORE the Conv 3x3 / s2 in the PAN column. REMOVE the arrow that currently connects the RIGHT edge of that upper PAN Conv (40 x 40 x 64) to the LEFT edge of the P3 head. KEEP B -> upper PAN Conv -> C exactly. Add a separate routed arrow from the TOP edge of B, vertically up into the empty space above the upper PAN Conv, then horizontally right over the upper PAN Conv, then down to the TOP edge of the P3 head. This new edge must bypass the upper PAN Conv with absolutely no junction at that Conv. Clearly show that B branches into both P3 head and upper PAN Conv. All other network connections remain unchanged.
+2. The three small box-regression boxes in the Detection section: replace "Box reg (4 x per cell)" with two-line text "Box reg" / "+ DFL". No invented channel count; the class-score boxes stay "Class scores (16 x per cell)".
+3. Inside RGGConv there should be EXACTLY THREE taps into Concat: one from the RepConv output junction BEFORE GhostConv 1; one from the GhostConv 1 output junction BETWEEN GhostConv 1 and GhostConv 2; one from GhostConv 2 output. Currently there is also a redundant downward arrow directly from the BOTTOM of GhostConv 1 to the bottom horizontal line. Remove THAT redundant bottom-of-GhostConv-1 arrow. Keep the tap from the junction AFTER GhostConv 1, and keep the other two taps. Keep the sequential Input -> RepConv -> GhostConv 1 -> GhostConv 2 chain.
+Do not introduce any other node or edge. Preserve the exact model graph and readable text. This must remain a crisp high-resolution landscape PNG.

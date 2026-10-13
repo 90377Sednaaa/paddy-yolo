@@ -1,0 +1,16 @@
+{
+  "id": "YOUR_KAGGLE_USERNAME/paddy-yolo-r2000-pestnet-baseline",
+  "title": "Paddy-YOLO R2000-PestNet Baseline",
+  "code_file": "baseline.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "dmrashidpferrer/r2000-pestnet"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

@@ -1,0 +1,20 @@
+{
+  "checked_at_utc": "2026-10-13T20:01:24.186763+00:00",
+  "remote_status": "KernelWorkerStatus.CANCEL_ACKNOWLEDGED",
+  "training_completed_folds": 5,
+  "epochs_per_fold": 300,
+  "downloaded_artifacts": 355,
+  "downloaded_bytes": 1458389485,
+  "download_failures": 0,
+  "local_sha256_checks": "all passed",
+  "best_checkpoint_inference": "all five passed",
+  "fold_metrics_match_summary": true,
+  "aggregate_mean_and_sample_std_verified": true,
+  "actual_remote_splits_match_table5": true,
+  "duplicate_content_leakage": 0,
+  "coverage_train_val_test": [
+    3,
+    1,
+    1
+  ]
+}

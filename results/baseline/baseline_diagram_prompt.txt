@@ -1,0 +1,23 @@
+Use case: infographic-diagram
+Asset type: scientific architecture figure for a rice pest detection research codebase.
+Primary request: Generate a polished, technically accurate, high-resolution landscape diagram titled "Paddy-YOLO Baseline Architecture". This baseline means the Paddy-Yolo-Baseline branch's configs/paddy-yolo.yaml, not stock YOLOv8n.
+Style: publication-quality flat technical schematic; white background; restrained teal backbone, blue neck, violet detection-head accents, amber training-loss callout; dark readable sans-serif text; crisp orthogonal arrows, generous spacing, no decorative photos or 3D effects. Target a wide 2560 x 1600 composition with large readable labels.
+Layout: Main network in the upper two thirds. Left column contains the backbone top to bottom; middle column contains top-down fusion; next column contains bottom-up fusion; right column contains three detection outputs and final detections. Bottom strip contains a module detail and a separate training-only loss box. Clearly group "Backbone", "Neck: FPN + PAN", and "Detection".
+Exact architecture:
+Input "RGB image | 640 x 640 x 3" feeds the backbone:
+"Conv 3x3 / s2 | 320 x 320 x 16" ->
+"Conv 3x3 / s2 + RGG (n=1) | P2/4 | 160 x 160 x 32" ->
+"Conv 3x3 / s2 + RGG (n=2) | P3/8 | 80 x 80 x 64" ->
+"Conv 3x3 / s2 + RGG (n=2) | P4/16 | 40 x 40 x 128" ->
+"Conv 3x3 / s2 + RGG (n=1) | P5/32 | 20 x 20 x 256" ->
+"SPPF | 20 x 20 x 256".
+Neck graph, use exactly these directed connections:
+SPPF -> "Upsample x2" -> "Concat + C2f | 40 x 40 x 128" (also receives backbone P4).
+That C2f -> "Upsample x2" -> "Concat + C2f | P3 | 80 x 80 x 64" (also receives backbone P3).
+That P3 C2f -> "Conv 3x3 / s2" -> "Concat + C2f | P4 | 40 x 40 x 128" (also receives the first neck 40 x 40 C2f).
+That P4 C2f -> "Conv 3x3 / s2" -> "Concat + C2f | P5 | 20 x 20 x 256" (also receives SPPF).
+Only these final neck tensors go to the three decoupled detection heads: P3 80 x 80, P4 40 x 40, P5 20 x 20. Label outputs "Box regression + 16 class scores", then "Decode + NMS", then "Rice pest detections". Use a single shared Detect group showing the three scale inputs.
+Lower-left inset title "Inside RGGConv". Show the sequential path Input -> RepConv -> GhostConv 1 -> GhostConv 2. Tap the outputs of RepConv, GhostConv 1, and GhostConv 2 into Concat -> "Conv 1x1" -> Output. GhostConvs use a 3x3 primary convolution and 5x5 depthwise convolution. This inset depicts RGGConv, not the entire RGG block. Caption "RGG: split -> repeated residual bottlenecks -> concat -> Conv 1x1". Small deployment caption "RepConv branches fuse to one 3x3 convolution".
+Lower-right separate amber box "Training only" containing "DIMIoU Strategy H + BCE + DFL" and "Loss gains: 7.5 / 0.5 / 1.5". Use a dotted connection from the Detect group to this box to signify training supervision; loss must not be placed in the inference path.
+Footer "Source: configs/paddy-yolo.yaml | Nano scale: depth 0.33, width 0.25 | 16 rice pest classes".
+Constraints: faithfully follow this implemented graph; feature shapes are H x W x C; four RGG backbone blocks, four C2f neck blocks, three detection scales; no EMA attention or P2 detection head; no objectness branch; avoid invented connections, loss curves, performance claims, parameter counts, citations, watermarks or extra text. Labels must be correctly spelled and legible.

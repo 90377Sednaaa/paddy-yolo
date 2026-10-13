@@ -1,0 +1,15 @@
+{
+  "diagnostic_kernel": "dmrashidpferrer/paddy-yolo-ema-dysample-diagnostics",
+  "diagnostic_version": 3,
+  "status": "complete",
+  "tests": "100 passed",
+  "epochs": 1,
+  "batch": 32,
+  "world_size": 2,
+  "batch_per_gpu": 16,
+  "device": "0,1",
+  "torch": "2.11.0+cu128",
+  "ultralytics": "8.3.18",
+  "initial_weights": "yolov8n.pt",
+  "checkpoint_reload_and_val_test_evaluation": "passed"
+}

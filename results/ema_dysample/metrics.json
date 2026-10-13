@@ -1,0 +1,33 @@
+{
+  "model": "paddy",
+  "epochs": 300,
+  "seed": 42,
+  "architecture": "/kaggle/working/paddy_yolo_ema_dysample_source/configs/paddy-yolo-ema-dysample.yaml",
+  "run_name": "ema_dysample_fold0",
+  "imgsz": 640,
+  "batch": 32,
+  "data": "/kaggle/working/ema_dysample_data/data.yaml",
+  "world_size": 2,
+  "batch_per_gpu": 16,
+  "initial_weights": "yolov8n.pt",
+  "ultralytics": "8.3.18",
+  "torch": "2.11.0+cu128",
+  "device": "0,1",
+  "best_checkpoint": "/kaggle/working/ema_dysample_output/train/ema_dysample_fold0/weights/best.pt",
+  "metrics": {
+    "val": {
+      "mAP50": 0.6407044467227865,
+      "mAP50_95": 0.453573825615951,
+      "precision": 0.6364154957238091,
+      "recall": 0.5673248399544524,
+      "f1": 0.5998873819453814
+    },
+    "test": {
+      "mAP50": 0.5902554545477874,
+      "mAP50_95": 0.41750441262882043,
+      "precision": 0.5616589570419759,
+      "recall": 0.5726108332414596,
+      "f1": 0.5670820225388695
+    }
+  }
+}

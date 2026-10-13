@@ -1,0 +1,21 @@
+{
+  "kernel": "dmrashidpferrer/paddy-yolo-ema-dysample-fold0",
+  "version": 2,
+  "status": "KernelWorkerStatus.COMPLETE",
+  "retrieved_at_utc": "2026-10-13T07:57:39.516402+00:00",
+  "files": [
+    {
+      "source": "paddy_yolo_ema_dysample_source/weights/paddy-yolo-ema-dysample_init.pt",
+      "path": "paddy-yolo-ema-dysample_init.pt",
+      "bytes": 13896627,
+      "sha256": "ac0675e48b3bcd95d7a481da076b09401c247225b6c91a8ec4485b75e23bc291"
+    },
+    {
+      "source": "paddy_yolo_ema_dysample_source/yolov8n.pt",
+      "path": "yolov8n.pt",
+      "bytes": 6549796,
+      "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36"
+    }
+  ],
+  "purpose": "Original source and initialization checkpoints retrieved for pretraining audit"
+}

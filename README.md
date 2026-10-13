@@ -161,6 +161,21 @@ Experiment/
 
 ## Installation and Environment
 
+### Kaggle testing
+
+The enhanced EMA + DySample model is defined in
+[configs/paddy-yolo-ema-dysample.yaml](configs/paddy-yolo-ema-dysample.yaml).
+Its single-run notebook, configuration and instructions are in
+[kaggle/ema_dysample](kaggle/ema_dysample/README.md), initialized from `yolov8n.pt`
+using the same R2000-PestNet dataset and supplied splits.
+
+Import [kaggle/baseline/baseline.ipynb](kaggle/baseline/baseline.ipynb) into Kaggle,
+attach `dmrashidpferrer/r2000-pestnet`, and enable GPU and Internet. The notebook
+defaults to a one-epoch Paddy-YOLO pipeline check and preserves the supplied
+train/validation/test splits. See [the Kaggle instructions](kaggle/baseline/README.md)
+for training settings, saved outputs and API commands. Credentials are supplied
+through `KAGGLE_API_TOKEN` for local API commands and are not embedded in the notebook.
+
 ### Prerequisites
 
 - Python 3.9, 3.10, 3.11, 3.12, or 3.13
@@ -168,6 +183,20 @@ Experiment/
 - Ultralytics 8.0+
 
 ### Setup
+
+For the local Windows baseline environment, run these commands from the repository root in PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-local.txt
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe verify_paddy_yolo.py --smoke-test
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Using the environment's Python directly avoids PowerShell activation policy changes. The local requirements pin PyTorch, Torchvision, and Ultralytics for this implementation. This setup supports CPU verification; GPU training requires a CUDA-enabled PyTorch installation and the prepared R2000 dataset.
+
+The architecture image for the `Paddy-Yolo-Baseline` experiment is saved at [results/baseline/baseline_diagram.png](results/baseline/baseline_diagram.png). It depicts `configs/paddy-yolo.yaml`, including the RGG backbone, standard C2f neck, three detection scales, and DIMIoU Strategy H training loss. The separate `train.py --baseline` option selects standard YOLOv8-N with CIoU.
 
 ```bash
 # Clone the repository

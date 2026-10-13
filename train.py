@@ -7,6 +7,7 @@ Supports 5-fold cross validation fold selection.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -21,6 +22,14 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
     """Parse command-line arguments for training Paddy-YOLO."""
     parser = argparse.ArgumentParser(
         description="Train Paddy-YOLO with DIMIoU Loss and Paper Hyperparameters"
+    )
+    parser.add_argument(
+        "--patience", type=int, default=None,
+        help="Early-stopping patience in epochs (overrides hyp file)",
+    )
+    parser.add_argument(
+        "--save-period", type=int, default=None,
+        help="Save an additional checkpoint every N epochs (overrides hyp file)",
     )
     parser.add_argument(
         "--baseline",
@@ -194,6 +203,12 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
     """Run Paddy-YOLO training."""
     # Ensure custom modules are registered
     register_paddy_modules()
+    # Ultralytics launches its DDP script outside this source directory. Make the
+    # custom modules importable in both worker processes without installing a wheel.
+    source_root = str(Path(__file__).resolve().parent)
+    python_path = os.environ.get("PYTHONPATH", "")
+    if source_root not in python_path.split(os.pathsep):
+        os.environ["PYTHONPATH"] = source_root + (os.pathsep + python_path if python_path else "")
 
     # Load baseline paper hyperparameters if specified
     hyp_params: Dict[str, Any] = {}
@@ -228,37 +243,16 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         ) and "paddy" not in weights_path.name:
             print(f"Initializing Paddy-YOLO architecture from {chosen_model} and transferring weights from {args.weights}...")
             from ultralytics import YOLO
+            from paddy_yolo.engine.pretrained import transfer_yolov8_weights
             init_yolo = YOLO(chosen_model)
-            init_yolo.load(args.weights)
-
-            # Transfer weights for shifted neck layers in attention-augmented models
+            transfer_report = transfer_yolov8_weights(init_yolo.model, args.weights, chosen_model)
             model_stem = Path(chosen_model).stem
-            shift_maps = {
-                "paddy-yolo-ema": {16: 17, 18: 19, 19: 21, 21: 23},
-                "paddy-yolo-p2-ema": {16: 20, 18: 22, 19: 24, 21: 26},
-            }
-            if model_stem in shift_maps:
-                layer_map = shift_maps[model_stem]
-                src_ckpt = torch.load(args.weights, map_location="cpu", weights_only=False)
-                src_sd = src_ckpt["model"].state_dict() if isinstance(src_ckpt, dict) and "model" in src_ckpt else src_ckpt.state_dict()
-                tgt_sd = init_yolo.model.state_dict()
-                shifted_count = 0
-                for src_key, src_val in src_sd.items():
-                    if not src_key.startswith("model."):
-                        continue
-                    parts = src_key.split(".")
-                    src_idx = int(parts[1])
-                    if src_idx in layer_map:
-                        tgt_key = f"model.{layer_map[src_idx]}." + ".".join(parts[2:])
-                        if tgt_key in tgt_sd and tgt_sd[tgt_key].shape == src_val.shape:
-                            tgt_sd[tgt_key].copy_(src_val.float())
-                            shifted_count += 1
-                init_yolo.model.load_state_dict(tgt_sd)
-                print(f"Topological weight transfer: mapped {shifted_count} additional neck tensors for {model_stem}.")
 
             weights_dir = Path("weights")
             weights_dir.mkdir(parents=True, exist_ok=True)
             init_path = weights_dir / f"{model_stem}_init.pt"
+            (weights_dir / f"{model_stem}_transfer.json").write_text(
+                json.dumps(transfer_report, indent=2) + "\n", encoding="utf-8")
             torch.save({"model": init_yolo.model}, init_path)
             print(f"Initialized checkpoint created at: {init_path}")
             model_path = str(init_path)
@@ -306,6 +300,10 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
         overrides["copy_paste"] = args.copy_paste
     if args.cache is not None:
         overrides["cache"] = True if args.cache.lower() in ("true", "ram") else args.cache
+    if args.patience is not None:
+        overrides["patience"] = args.patience
+    if args.save_period is not None:
+        overrides["save_period"] = args.save_period
 
     title = "Baseline YOLOv8-N" if args.baseline else "Paddy-YOLO"
     print("=" * 60)
@@ -334,8 +332,9 @@ def train(args: argparse.Namespace) -> PaddyTrainer:
 
     if args.baseline:
         from ultralytics.models.yolo.detect import DetectionTrainer
-        # Remove custom strategy key for standard DetectionTrainer
-        overrides.pop("strategy", None)
+        # Standard DetectionTrainer does not accept PaddyTrainer loss options.
+        for key in ("strategy", "focal_gamma", "focal_alpha"):
+            overrides.pop(key, None)
         trainer = DetectionTrainer(overrides=overrides)
     else:
         trainer = PaddyTrainer(overrides=overrides)

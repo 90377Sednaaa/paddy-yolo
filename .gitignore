@@ -2,6 +2,17 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.venv/
+.local/
+# Credentials must never be included in Kaggle notebooks or source archives.
+.env
+.env.*
+!.env.example
+kaggle.json
+access_token
+/kaggle/baseline/output/
+/kaggle/ema_dysample/output/
+/weights/
 *.egg-info/
 dist/
 build/
@@ -25,6 +36,7 @@ scratch/
 scratch*
 *.pdf
 *.png
+!results/baseline/baseline_diagram.png
 *.jpg
 .superpowers/
 
