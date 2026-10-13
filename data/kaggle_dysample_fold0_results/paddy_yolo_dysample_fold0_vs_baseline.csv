@@ -1,0 +1,6 @@
+Metric,Baseline Fold 0,DySample Fold 0,Delta vs Baseline
+Precision (%),68.32%,64.12%,-4.20%
+Recall (%),59.20%,63.43%,+4.23%
+mAP@50 (%),67.55%,64.27%,-3.28%
+mAP@50-95 (%),48.71%,45.81%,-2.90%
+F1 Score (%),63.43%,63.77%,+0.34%

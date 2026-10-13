@@ -13,8 +13,10 @@ data/r2000/
 # Ignore all files in data by default
 data/**
 !data/**/
-# Allow ONLY baseline 5-fold cross-validation results CSV files
+# Allow results CSV files in baseline and DySample experiment folders
 !data/kaggle_baseline_5fold_results/**/*.csv
+!data/kaggle_dysample_*_results/**/*.csv
+!data/kaggle_dysample_*_results/**/*.pt
 
 kaggle_kernel/
 kaggle_paddy_kernel/
