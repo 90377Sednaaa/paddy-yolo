@@ -1,0 +1,18 @@
+Species,P (%),R (%),mAP@50 (%),mAP@50-95 (%)
+rice leaf roller,74.7,50.0,64.6,45.0
+pink rice borer,76.8,74.1,86.5,58.8
+asiatic rice borer,40.1,25.6,24.6,17.2
+yellow rice borer,70.4,65.0,74.1,51.1
+rice leaf caterpillar,83.0,46.7,58.8,42.7
+small brown plant hopper,76.9,53.6,76.6,61.7
+white backed plant hopper,24.2,57.1,49.4,30.9
+brown plant hopper,89.5,64.3,73.2,63.6
+rice leaf hopper,88.8,73.9,90.2,67.6
+rice gall midge,94.7,52.6,59.2,42.9
+paddy stem maggot,71.8,59.1,62.6,44.5
+rice stem fly,89.8,76.1,84.2,55.2
+grain spreader thrips,93.2,82.4,88.1,61.1
+rice weevil,88.4,74.0,80.6,58.7
+rice shell pest,82.2,67.7,76.9,58.8
+melanitis leda,86.9,87.5,95.1,69.7
+--- OVERALL FOLD 0 ---,76.97,63.11,71.55,51.84
