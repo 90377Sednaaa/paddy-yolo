@@ -34,3 +34,15 @@ def test_pretrained_weights_transfer():
     # Verify model forward pass succeeds after loading weights
     out = model(torch.randn(1, 3, 640, 640), verbose=False)
     assert out is not None
+
+
+def test_paddy_yolo_dysample_channels_last():
+    """Verify full Paddy-YOLO DySample model executes forward pass with channels_last tensor."""
+    register_paddy_modules()
+    model = YOLO("configs/paddy-yolo-dysample.yaml")
+    dummy_input = torch.randn(2, 3, 640, 640).contiguous(
+        memory_format=torch.channels_last
+    )
+    preds = model(dummy_input, verbose=False)
+    assert preds is not None
+
