@@ -8,13 +8,13 @@ build/
 runs/
 # Dataset and large data directories
 /dataset/
-data/r2000/
 
-# Ignore files in data except results and weights
+# Ignore all files in data by default
 data/**
 !data/**/
-!data/**/*.csv
-!data/**/*.pt
+# Allow ONLY results CSV files and model weights in EMA experiment folders
+!data/kaggle_ema_*_results/**/*.csv
+!data/kaggle_ema_*_results/**/*.pt
 
 kaggle_kernel/
 kaggle_paddy_kernel/
@@ -24,5 +24,11 @@ kaggle_*_kernel/
 scratch/
 scratch*
 *.pdf
+*.png
+*.jpg
 .superpowers/
+
+# Allow model weights
+!*.pt
+!yolov8n.pt
 
