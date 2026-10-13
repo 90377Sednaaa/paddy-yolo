@@ -6,8 +6,16 @@ __pycache__/
 dist/
 build/
 runs/
+# Dataset and large data directories
 /dataset/
-data/
+data/r2000/
+
+# Ignore files in data except results and weights
+data/**
+!data/**/
+!data/**/*.csv
+!data/**/*.pt
+
 kaggle_kernel/
 kaggle_paddy_kernel/
 kaggle_enhanced_kernel/
@@ -16,5 +24,5 @@ kaggle_*_kernel/
 scratch/
 scratch*
 *.pdf
-*.pt
 .superpowers/
+
