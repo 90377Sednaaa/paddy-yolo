@@ -1,6 +1,7 @@
 """Render the downloaded five-fold test metrics and their arithmetic mean."""
 
 import json
+import re
 from pathlib import Path
 
 import matplotlib
@@ -32,11 +33,35 @@ def main():
     labels = [f"Fold {index + 1}" for index in range(5)] + ["Mean"]
     colors = ["#4477AA", "#66CCEE", "#228833", "#CCBB44", "#AA3377", "#172E49"]
 
+    log = (directory / "logs/paper_training.log").read_text(encoding="utf-8")
+    speed_pattern = (
+        r"Speed: ([0-9.]+)ms preprocess, ([0-9.]+)ms inference, "
+        r"([0-9.]+)ms loss, ([0-9.]+)ms postprocess per image\s+"
+        r"Results saved to [^\n]*fold(\d+)/evaluate/test"
+    )
+    speed_rows = re.findall(speed_pattern, log)
+    assert len(speed_rows) == 5
+    timings = {int(fold): (float(pre), float(inference), float(post))
+               for pre, inference, loss, post, fold in speed_rows}
+    assert sorted(timings) == list(range(5))
+    inference_times = np.array([timings[index][1] for index in range(5)])
+    mean_inference = inference_times.mean()
+    mean_processing = np.mean([sum(timings[index]) for index in range(5)])
+    reported_flops = {float(value) for value in re.findall(
+        r"summary \(fused\):[^\n]*?([0-9.]+) GFLOPs", log
+    )}
+    assert len(reported_flops) == 1
+    gflops = reported_flops.pop()
+    efficiency = [
+        [f"{gflops:.1f}", f"{time:.2f}", f"{1000 / time:.2f}"]
+        for time in [*inference_times, mean_inference]
+    ]
+
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 12})
-    figure = plt.figure(figsize=(16, 10), facecolor="white")
+    figure = plt.figure(figsize=(16, 11), facecolor="white")
     grid = figure.add_gridspec(
         2, 1, height_ratios=[1.65, 1], left=0.075, right=0.965,
-        top=0.79, bottom=0.115, hspace=0.28,
+        top=0.79, bottom=0.20, hspace=0.28,
     )
     axis = figure.add_subplot(grid[0])
     positions = np.arange(len(metrics))
@@ -66,18 +91,21 @@ def main():
 
     table_axis = figure.add_subplot(grid[1])
     table_axis.axis("off")
-    table_data = [[label] + [f"{value:.2f}%" for value in row]
-                  for label, row in zip(labels, percentages)]
+    table_data = [[label] + [f"{value:.2f}%" for value in row] + speed
+                  for label, row, speed in zip(labels, percentages, efficiency)]
     table = table_axis.table(
-        cellText=table_data, colLabels=["Result"] + titles,
+        cellText=table_data, colLabels=["Result"] + titles + [
+            "GFLOPs", "Inference\n(ms/image)", "FPS\n(inference)",
+        ],
         cellLoc="center", colLoc="center", bbox=[0, 0, 1, 1],
-        colWidths=[0.18] + [0.164] * 5,
+        colWidths=[0.12] + [0.112] * 5 + [0.10, 0.11, 0.11],
     )
     table.auto_set_font_size(False)
-    table.set_fontsize(13)
+    table.set_fontsize(11.5)
     for (row, column), cell in table.get_celld().items():
         cell.set_edgecolor("white")
         cell.set_linewidth(1.5)
+        cell.set_height((1.65 if row == 0 else 1) / 7.65)
         if row == 0:
             cell.set_facecolor("#172E49")
             cell.set_text_props(color="white", weight="bold")
@@ -98,14 +126,30 @@ def main():
         fontsize=12, color="#667085",
     )
     figure.text(
-        0.075, 0.07,
+        0.075, 0.157,
         "Mean = arithmetic average of five test scores, calculated before rounding. "
         "Each fold uses its best validation checkpoint.",
         fontsize=10.5, color="#667085",
     )
     figure.text(
-        0.075, 0.044,
-        "Fold 1–5 correspond to directories fold0–fold4. Source: downloaded summary.json.",
+        0.075, 0.129,
+        "Speed: Tesla T4, evaluation batch 32, imgsz 640. Batched throughput; not batch-1 latency. GFLOPs: Ultralytics estimate.",
+        fontsize=10.5, color="#667085",
+    )
+    figure.text(
+        0.075, 0.101,
+        "FPS = 1000 / inference time; mean FPS uses mean inference time. Timings are approximate, derived from rounded logs.",
+        fontsize=10.5, color="#667085",
+    )
+    figure.text(
+        0.075, 0.073,
+        f"Mean preprocessing + inference + postprocessing: {mean_processing:.2f} ms/image "
+        f"({1000 / mean_processing:.2f} FPS). Excludes data loading and saving.",
+        fontsize=10.5, color="#667085",
+    )
+    figure.text(
+        0.075, 0.045,
+        "Fold 1–5 = directories fold0–fold4. Sources: downloaded summary.json and logs/paper_training.log.",
         fontsize=10.5, color="#667085",
     )
     output = directory / "fivefold_results.png"

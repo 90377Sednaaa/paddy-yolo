@@ -24,6 +24,8 @@ Scores below are mean ± sample standard deviation, with standard deviations in 
 Artifacts:
 
 - [fivefold_results.png](fivefold_results.png): five individual test results and their arithmetic mean; regenerate with [plot_results.py](plot_results.py).
+- [per_class_performance.png](per_class_performance.png): per-class five-fold test means and AP50 by fold; regenerate with [plot_per_class.py](plot_per_class.py). [Per-fold CSV](per_class_fold_metrics.csv) and [mean CSV](per_class_mean_metrics.csv) contain approximate values extracted from rounded console logs; per-class F1 is derived from precision and recall.
+- [paper_baseline_comparison.png](paper_baseline_comparison.png): overall and per-class AP comparison against the published Paddy-YOLO R2000 results in Table 8. [Comparison CSV](paper_per_class_comparison.csv) contains all five metrics; [paper extraction](paper_r2000_table8.json) records the source values. This compares published benchmarks using reconstructed fold memberships and a different learning rate; it does not isolate architectural effects. Recreate with `python compare_paper.py --paper "path/to/baseline paper.pdf"`.
 - `fold0/` through `fold4/`: metrics, training history, best/last/periodic checkpoints, plots and logs.
 - [summary.json](summary.json) and [fold_metrics.csv](fold_metrics.csv): aggregate and individual fold scores.
 - `splits/`: actual Kaggle fold memberships and data YAMLs. Absolute paths inside these files refer to Kaggle.
