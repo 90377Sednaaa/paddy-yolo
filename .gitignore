@@ -26,7 +26,6 @@ kaggle_ema_800_kernel/
 kaggle_*_kernel/
 scratch/
 scratch*
-*.pdf
 *.png
 *.jpg
 .superpowers/
