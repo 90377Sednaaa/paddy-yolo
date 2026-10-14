@@ -19,7 +19,33 @@ from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.repconv import RepConv
 
 
-class RGGConv(nn.Module):
+class _CanonicalModuleAliases(nn.Module):
+    """Keep convenience names out of state_dict and weight-averaging updates."""
+
+    _module_aliases = {}
+
+    def __setstate__(self, state):
+        """Normalize modules in whole-model checkpoints saved before this fix."""
+        super().__setstate__(state)
+        for alias, canonical in self._module_aliases.items():
+            module = self._modules.pop(alias, None)
+            if module is not None and canonical not in self._modules:
+                self._modules[canonical] = module
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        """Accept historical alias keys when loading a state-only checkpoint."""
+        for alias, canonical in self._module_aliases.items():
+            alias_prefix = prefix + alias + "."
+            for key in list(state_dict):
+                if key.startswith(alias_prefix):
+                    canonical_key = prefix + canonical + "." + key[len(alias_prefix):]
+                    state_dict.setdefault(canonical_key, state_dict.pop(key))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+
+class RGGConv(_CanonicalModuleAliases):
     """RGG Convolution layer combining RepConv and sequential GhostConvs.
 
     Figure 6(b) of Paddy-YOLO (Zheng et al., 2025):
@@ -36,6 +62,8 @@ class RGGConv(nn.Module):
         act: Activation function or boolean flag (default: True -> SiLU).
     """
 
+    _module_aliases = {"cv1": "rep", "cv2": "ghost1", "cv3": "ghost2", "fuse": "conv"}
+
     def __init__(
         self,
         c1: int,
@@ -51,11 +79,21 @@ class RGGConv(nn.Module):
         self.ghost2 = GhostConv(c2, c2, k=3, s=1, dw_k=5, act=act)
         self.conv = Conv(3 * c2, c2, k=1, s=1, act=act)
 
-        # Aliases for convenience / conventional access
-        self.cv1 = self.rep
-        self.cv2 = self.ghost1
-        self.cv3 = self.ghost2
-        self.fuse = self.conv
+    @property
+    def cv1(self):
+        return self.rep
+
+    @property
+    def cv2(self):
+        return self.ghost1
+
+    @property
+    def cv3(self):
+        return self.ghost2
+
+    @property
+    def fuse(self):
+        return self.conv
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: sequential RepConv -> GhostConv1 -> GhostConv2, concatenated and fused.
@@ -77,7 +115,7 @@ class RGGConv(nn.Module):
             self.rep.switch_to_deploy()
 
 
-class RGGBottleneck(nn.Module):
+class RGGBottleneck(_CanonicalModuleAliases):
     """RGGBottleneck residual module.
 
     Figure 6(c) of Paddy-YOLO:
@@ -93,6 +131,8 @@ class RGGBottleneck(nn.Module):
         e: Expansion ratio (default: 0.5).
         act: Activation function or boolean flag (default: True).
     """
+
+    _module_aliases = {"rgg_conv": "cv2"}
 
     def __init__(
         self,
@@ -115,7 +155,10 @@ class RGGBottleneck(nn.Module):
         k1 = k[0] if isinstance(k, (tuple, list)) else k
         self.cv1 = Conv(c1, c2, k=k1, s=1, act=act)
         self.cv2 = RGGConv(c2, c2, act=act)
-        self.rgg_conv = self.cv2  # alias
+
+    @property
+    def rgg_conv(self):
+        return self.cv2
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: residual shortcut + RGGConv(Conv(x)).
