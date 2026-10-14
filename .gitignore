@@ -13,10 +13,11 @@ data/r2000/
 # Ignore all files in data by default
 data/**
 !data/**/
-# Allow results CSV files in baseline and DySample experiment folders
+# Allow results CSV files in baseline, DySample, EMA, and combined experiment folders
 !data/kaggle_baseline_5fold_results/**/*.csv
 !data/kaggle_dysample_*_results/**/*.csv
-!data/kaggle_dysample_*_results/**/*.pt
+!data/kaggle_ema_*_results/**/*.csv
+
 
 kaggle_kernel/
 kaggle_paddy_kernel/
@@ -32,5 +33,6 @@ scratch*
 
 # Ignore weights by default except baseline yolov8n.pt
 *.pt
-!yolov8n.pt
+!/yolov8n.pt
+
 
