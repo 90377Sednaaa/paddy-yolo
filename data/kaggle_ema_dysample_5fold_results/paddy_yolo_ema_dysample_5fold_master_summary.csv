@@ -1,0 +1,5 @@
+Configuration,Precision (%),Recall (%),mAP@50 (μ ± σ),mAP@50-95 (μ ± σ),F1 Score (%),Δ vs Baseline
+Baseline Paddy-YOLO,65.8 ± 4.3,61.0 ± 1.8,64.8 ± 2.8,45.9 ± 2.7,63.2 ± 2.5,0.00%
+Paddy-YOLO + EMA,66.9 ± 5.0,59.2 ± 2.9,65.2 ± 2.8,47.4 ± 2.5,62.9 ± 2.6,+0.40%
+Paddy-YOLO + DySample,66.0 ± 4.1,59.0 ± 5.5,63.0 ± 3.4,45.2 ± 3.1,62.1 ± 3.0,-1.80%
+Paddy-YOLO + EMA + DySample (Config D),65.4 ± 2.1,61.7 ± 2.1,65.9 ± 1.2,47.6 ± 1.3,63.4 ± 0.8,+1.11%
