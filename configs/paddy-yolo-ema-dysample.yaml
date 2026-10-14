@@ -1,0 +1,54 @@
+# Paddy-YOLO with EMA Attention and DySample Dynamic Upsampling (Configuration D)
+# Reference: Zheng et al., "Paddy-YOLO: An accurate method for rice pest detection",
+# Computers and Electronics in Agriculture 238 (2025) 110777.
+#
+# Paper Ablation Study Configuration D:
+# 1. Backbone: 4 RGG stages (RepConv + 5x5 DWConv GhostConv) + EMA inserted after P3, P4, P5 stages (Layers 5, 8, 11).
+# 2. Neck: 2 DySample dynamic upsamplers (scale=2, style='lp', groups=4) replacing conventional nn.Upsample (Layers 13 and 16).
+# 3. Heads: 3 Detection Heads at P3 (80x80), P4 (40x40), P5 (20x20).
+# 4. Bounding Box Loss: Dynamic Inner Minimum Point Distance IoU (DIMIoU Strategy H).
+
+nc: 16 # 16 rice pest classes (Table 4)
+scale: n
+scales:
+  n: [0.33, 0.25, 1024]
+
+# Paddy-YOLO backbone with EMA Attention
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]          # 0-P1/2 (320x320, 16ch)
+  - [-1, 1, Conv, [128, 3, 2]]         # 1-P2/4 (160x160, 32ch)
+  - [-1, 3, RGG, [128, True]]          # 2 (Backbone P2: 160x160, 32ch)
+  - [-1, 1, Conv, [256, 3, 2]]         # 3-P3/8 (80x80, 64ch)
+  - [-1, 6, RGG, [256, True]]          # 4 (Backbone P3: 80x80, 64ch)
+  - [-1, 1, EMA, []]                   # 5 (Backbone P3 EMA Attention: 80x80, 64ch)
+  - [-1, 1, Conv, [512, 3, 2]]         # 6-P4/16 (40x40, 128ch)
+  - [-1, 6, RGG, [512, True]]          # 7 (Backbone P4: 40x40, 128ch)
+  - [-1, 1, EMA, []]                   # 8 (Backbone P4 EMA Attention: 40x40, 128ch)
+  - [-1, 1, Conv, [1024, 3, 2]]        # 9-P5/32 (20x20, 256ch)
+  - [-1, 3, RGG, [1024, True]]         # 10 (Backbone P5: 20x20, 256ch)
+  - [-1, 1, EMA, []]                   # 11 (Backbone P5 EMA Attention: 20x20, 256ch)
+  - [-1, 1, SPPF, [1024, 5]]           # 12 (Backbone P5 SPPF: 20x20, 256ch)
+
+# Feature fusion neck with DySample Dynamic Upsamplers
+head:
+  # Top-down feature pyramid with DySample
+  - [-1, 1, DySample, [2, "lp", 4]]    # 13 (replaces nn.Upsample, 40x40, 256ch)
+  - [[-1, 8], 1, Concat, [1]]          # 14: cat backbone P4 EMA (layer 8) -> 40x40, 384ch
+  - [-1, 3, C2f, [512]]                # 15 (40x40, 128ch)
+
+  - [-1, 1, DySample, [2, "lp", 4]]    # 16 (replaces nn.Upsample, 80x80, 128ch)
+  - [[-1, 5], 1, Concat, [1]]          # 17: cat backbone P3 EMA (layer 5) -> 80x80, 192ch
+  - [-1, 3, C2f, [256]]                # 18 (80x80, 64ch) -> P3 Head
+
+  # Bottom-up feature pyramid
+  - [-1, 1, Conv, [256, 3, 2]]         # 19 (40x40, 64ch)
+  - [[-1, 15], 1, Concat, [1]]         # 20: cat with layer 15 (128ch) -> 40x40, 192ch
+  - [-1, 3, C2f, [512]]                # 21 (40x40, 128ch) -> P4 Head
+
+  - [-1, 1, Conv, [512, 3, 2]]         # 22 (20x20, 128ch)
+  - [[-1, 12], 1, Concat, [1]]         # 23: cat with layer 12 SPPF (256ch) -> 20x20, 384ch
+  - [-1, 3, C2f, [1024]]               # 24 (20x20, 256ch) -> P5 Head
+
+  # 3 Detection Heads: [P3 (80x80), P4 (40x40), P5 (20x20)]
+  - [[18, 21, 24], 1, Detect, [nc]]    # 25: Detect(P3, P4, P5)

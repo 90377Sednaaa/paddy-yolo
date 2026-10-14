@@ -23,6 +23,7 @@ import ultralytics.nn.modules.block as ultralytics_block
 import ultralytics.nn.tasks as ultralytics_tasks
 
 from paddy_yolo.modules.dysample import DySample
+from paddy_yolo.modules.ema import EMA
 from paddy_yolo.modules.ghostconv import GhostConv
 from paddy_yolo.modules.repconv import RepConv
 from paddy_yolo.modules.rgg import RGG, RGGBottleneck, RGGConv
@@ -35,6 +36,7 @@ CUSTOM_MODULES: Dict[str, Type[nn.Module]] = {
     "RepConv": RepConv,
     "GhostConv": GhostConv,
     "DySample": DySample,
+    "EMA": EMA,
 }
 
 _PADDY_MODULES_REGISTERED = False
@@ -179,6 +181,8 @@ def _build_fallback_parse_model():
                 getattr(ultralytics_tasks, "AIFI", None),
                 DySample,
                 getattr(ultralytics_tasks, "DySample", None),
+                EMA,
+                getattr(ultralytics_tasks, "EMA", None),
             }:
                 args = [ch[f], *args]
                 c2 = ch[f]
@@ -296,7 +300,7 @@ def register_paddy_modules() -> None:
         if "RGG" not in src and "C2f," in src:
             new_src = src.replace("C2f,", "C2f,\n            RGG,")
             if "m is AIFI:" in new_src:
-                new_src = new_src.replace("m is AIFI:", "m in (AIFI, DySample):")
+                new_src = new_src.replace("m is AIFI:", "m in (AIFI, DySample, EMA):")
             local_ns: dict = {}
             exec(new_src, ultralytics_tasks.__dict__, local_ns)
             new_parse_model = local_ns["parse_model"]
@@ -304,8 +308,17 @@ def register_paddy_modules() -> None:
             ultralytics_tasks.parse_model = new_parse_model
             ultralytics_nn.parse_model = new_parse_model
             patched = True
-        elif "RGG" in src and "DySample" not in src and "m is AIFI:" in src:
-            new_src = src.replace("m is AIFI:", "m in (AIFI, DySample):")
+        elif "RGG" in src and "m is AIFI:" in src:
+            new_src = src.replace("m is AIFI:", "m in (AIFI, DySample, EMA):")
+            local_ns: dict = {}
+            exec(new_src, ultralytics_tasks.__dict__, local_ns)
+            new_parse_model = local_ns["parse_model"]
+            new_parse_model._is_paddy_patched = True
+            ultralytics_tasks.parse_model = new_parse_model
+            ultralytics_nn.parse_model = new_parse_model
+            patched = True
+        elif "RGG" in src and "DySample" in src and "EMA" not in src:
+            new_src = src.replace("m in (AIFI, DySample):", "m in (AIFI, DySample, EMA):")
             local_ns: dict = {}
             exec(new_src, ultralytics_tasks.__dict__, local_ns)
             new_parse_model = local_ns["parse_model"]
