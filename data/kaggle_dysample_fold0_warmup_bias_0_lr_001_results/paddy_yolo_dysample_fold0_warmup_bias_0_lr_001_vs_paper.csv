@@ -1,0 +1,6 @@
+Metric,Paper (Table 8),Baseline Fold 0 (lr=0.001),DySample Fold 0 (Calibrated),Delta vs Baseline Fold 0,Delta vs Paper
+Precision (%),73.10%,77.59%,74.30%,-3.29%,+1.20%
+Recall (%),63.00%,71.17%,72.04%,+0.87%,+9.04%
+mAP@50 (%),70.20%,74.90%,75.47%,+0.57%,+5.27%
+mAP@50-95 (%),51.50%,58.11%,59.05%,+0.94%,+7.55%
+F1 Score (%),67.70%,74.24%,73.15%,-1.09%,+5.45%
