@@ -1,0 +1,6 @@
+Metric,Paper (Table 8),EMA Fold 0 (Paper Defaults),EMA Fold 0 (Calibrated AdamW),Delta vs Paper Defaults,Delta vs Paper
+Precision (%),73.10%,73.25%,81.82%,+8.57%,+8.72%
+Recall (%),63.00%,60.37%,68.36%,+7.99%,+5.36%
+mAP@50 (%),70.20%,69.50%,75.60%,+6.10%,+5.40%
+mAP@50-95 (%),51.50%,50.19%,59.99%,+9.80%,+8.49%
+F1 Score (%),67.70%,66.19%,74.49%,+8.30%,+6.79%
