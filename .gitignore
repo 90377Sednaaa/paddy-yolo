@@ -17,6 +17,8 @@ data/**
 !data/kaggle_baseline_5fold_results/**/*.csv
 !data/kaggle_dysample_*_results/**/*.csv
 !data/kaggle_ema_*_results/**/*.csv
+!data/kaggle_config_d_*_results/**/*.csv
+!data/kaggle_ema_dysample_*_results/**/*.csv
 
 
 kaggle_kernel/
