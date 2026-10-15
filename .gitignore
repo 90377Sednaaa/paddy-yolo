@@ -13,8 +13,8 @@ data/r2000/
 # Ignore all files in data by default
 data/**
 !data/**/
-# Allow ONLY baseline 5-fold cross-validation results CSV files
-!data/kaggle_baseline_5fold_results/**/*.csv
+# Allow baseline results CSV files
+!data/kaggle_baseline_*/**/*.csv
 
 kaggle_kernel/
 kaggle_paddy_kernel/

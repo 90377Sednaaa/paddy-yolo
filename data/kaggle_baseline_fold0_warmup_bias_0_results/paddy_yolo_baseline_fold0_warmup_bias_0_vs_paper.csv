@@ -1,0 +1,6 @@
+Metric,Baseline Fold 0 (bias_lr=0.1),Baseline Fold 0 (warmup_bias_0),Delta vs bias_lr=0.1
+Precision (%),68.32%,74.48%,+6.16%
+Recall (%),59.20%,59.89%,+0.69%
+mAP@50 (%),67.55%,68.96%,+1.41%
+mAP@50-95 (%),48.71%,51.57%,+2.86%
+F1 Score (%),63.43%,66.39%,+2.96%

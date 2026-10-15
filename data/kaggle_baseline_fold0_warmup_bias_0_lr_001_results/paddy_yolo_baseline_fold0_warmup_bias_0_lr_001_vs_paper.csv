@@ -1,0 +1,6 @@
+Metric,Baseline Fold 0 (Paper Defaults),Baseline Fold 0 (Calibrated AdamW),Delta vs Paper Defaults
+Precision (%),68.32%,77.59%,+9.27%
+Recall (%),59.20%,71.17%,+11.97%
+mAP@50 (%),67.55%,74.90%,+7.35%
+mAP@50-95 (%),48.71%,58.11%,+9.40%
+F1 Score (%),63.43%,74.24%,+10.81%
