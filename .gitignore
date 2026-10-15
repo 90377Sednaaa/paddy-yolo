@@ -28,7 +28,7 @@ scratch*
 *.jpg
 .superpowers/
 
-# Ignore weights by default except baseline yolov8n.pt
+# Ignore weights by default except baseline yolov8n.pt in root
 *.pt
-!yolov8n.pt
+!/yolov8n.pt
 
