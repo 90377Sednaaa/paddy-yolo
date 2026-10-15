@@ -1,0 +1,17 @@
+Class ID,Species,P (%),R (%),mAP@50 (%),mAP@50-95 (%)
+0,rice leaf roller,67.84,39.7,56.9,36.84
+1,pink rice borer,77.56,85.19,89.21,67.52
+2,asiatic rice borer,42.95,33.33,30.66,23.07
+3,yellow rice borer,67.22,65.29,74.25,49.86
+4,rice leaf caterpillar,58.89,47.62,52.23,37.45
+5,small brown plant hopper,76.75,74.55,80.93,63.14
+6,white backed plant hopper,24.51,57.14,29.59,16.55
+7,brown plant hopper,60.58,57.14,54.55,37.36
+8,rice leaf hopper,70.14,81.74,81.58,60.33
+9,rice gall midge,81.63,55.88,57.66,41.03
+10,paddy stem maggot,62.84,69.22,65.23,51.31
+11,rice stem fly,84.05,72.83,82.22,53.73
+12,grain spreader thrips,80.01,84.31,88.22,62.55
+13,rice weevil,87.49,80.65,88.67,61.29
+14,rice shell pest,80.5,70.97,76.91,57.2
+15,melanitis leda,84.7,92.26,95.03,72.71
