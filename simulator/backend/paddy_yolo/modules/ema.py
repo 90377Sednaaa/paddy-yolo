@@ -1,10 +1,8 @@
 """Efficient Multi-Scale Attention (EMA) Module with Cross-Spatial Learning.
 
-Reference:
-Ouyang, D., He, S., Zhang, G., Luo, M., Guo, H., Zhan, J., & Huang, Z. (2023).
-"Efficient Multi-Scale Attention Module with Cross-Spatial Learning."
-IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP 2023).
-Algorithm reference: https://github.com/YOLOonMe/EMA-attention-module
+Dual-compatible implementation supporting:
+1. ICASSP 2023 formulation with registered pooling operators (Fold 0: PaddyYolo_Enhanced.pt)
+2. Mean-context formulation without registered submodules (Fold 2 and alternative checkpoints)
 """
 
 from __future__ import annotations
@@ -60,6 +58,11 @@ class EMA(nn.Module):
         group_channels = c // self.groups
         assert group_channels > 0, f"Channel count {c} must be >= groups {self.groups}"
 
+        self.softmax = nn.Softmax(dim=-1)
+        self.agp = nn.AdaptiveAvgPool2d((1, 1))
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+
         self.gn = nn.GroupNorm(group_channels, group_channels)
         self.conv1x1 = nn.Conv2d(
             group_channels, group_channels, kernel_size=1, stride=1, padding=0, bias=False
@@ -71,34 +74,62 @@ class EMA(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass applying cross-spatial multi-scale attention.
 
-        Args:
-            x: Input tensor of shape (batch, channels, height, width).
-
-        Returns:
-            Attention-reweighted tensor of same shape (batch, channels, height, width).
+        Adaptively routes to the architecture variant corresponding to the checkpoint:
+        - If pool_h is present (Fold 0): applies the ICASSP coordinate pooling + cross-attention with residual skip.
+        - If pool_h is absent: applies the mean-context grouped query formulation.
         """
-        batch, channels, height, width = x.shape
-        groups = getattr(self, "groups", 8)
-        grouped = x.reshape(batch * groups, channels // groups, height, width)
+        if hasattr(self, "pool_h") and getattr(self, "pool_h") is not None:
+            # 1. Feature grouping: reshape channels into batch dimension
+            b, c, h, w = x.size()
+            g = getattr(self, "groups", 8)
+            gc = c // g
+            group_x = x.reshape(b * g, gc, h, w)
 
-        # 1D directional coordinate statistics (Height and Width context)
-        height_context = grouped.mean(dim=3, keepdim=True)
-        width_context = grouped.mean(dim=2, keepdim=True).transpose(2, 3)
+            # 2. 1D directional coordinate pooling (Height & Width)
+            x_h = self.pool_h(group_x)
+            x_w = self.pool_w(group_x).permute(0, 1, 3, 2)
 
-        # 1x1 conv encoding across concatenated coordinate dimensions
-        context = self.conv1x1(torch.cat((height_context, width_context), dim=2))
-        height_gate, width_gate = context.split((height, width), dim=2)
+            # 3. Concatenate along spatial dimension & 1x1 conv encoding
+            hw = self.conv1x1(torch.cat([x_h, x_w], dim=2))
+            x_h, x_w = torch.split(hw, [h, w], dim=2)
 
-        # Multi-scale parallel sub-networks
-        gated = self.gn(grouped * height_gate.sigmoid() * width_gate.transpose(2, 3).sigmoid())
-        spatial = self.conv3x3(grouped)
+            # 4. Multi-scale parallel sub-networks:
+            # Branch 1 (1x1 with coordinate attention gating)
+            x1 = self.gn(group_x * x_h.sigmoid() * x_w.permute(0, 1, 3, 2).sigmoid())
+            # Branch 2 (3x3 spatial context capture)
+            x2 = self.conv3x3(group_x)
 
-        # Cross-spatial learning interaction
-        gated_query = gated.mean((2, 3)).unsqueeze(1).softmax(dim=-1)
-        spatial_query = spatial.mean((2, 3)).unsqueeze(1).softmax(dim=-1)
+            # 5. Cross-spatial learning interaction
+            x11 = self.softmax(self.agp(x1).reshape(b * g, -1, 1).permute(0, 2, 1))
+            x12 = x2.reshape(b * g, gc, -1)
 
-        weights = (gated_query @ spatial.flatten(2) + spatial_query @ gated.flatten(2))
-        weights = weights.reshape(batch * groups, 1, height, width).sigmoid()
+            x21 = self.softmax(self.agp(x2).reshape(b * g, -1, 1).permute(0, 2, 1))
+            x22 = x1.reshape(b * g, gc, -1)
 
-        # Attention reweighting
-        return (grouped * weights).reshape(batch, channels, height, width)
+            weights = (torch.matmul(x11, x12) + torch.matmul(x21, x22)).reshape(b * g, 1, h, w)
+
+            # 6. Reweight input features with residual identity skip connection
+            att = (group_x * weights.sigmoid()).reshape(b, c, h, w)
+            return x + att
+        else:
+            # Fallback for checkpoints serialized without registered pooling submodules
+            batch, channels, height, width = x.shape
+            groups = getattr(self, "groups", 8)
+            grouped = x.reshape(batch * groups, channels // groups, height, width)
+
+            height_context = grouped.mean(dim=3, keepdim=True)
+            width_context = grouped.mean(dim=2, keepdim=True).transpose(2, 3)
+
+            context = self.conv1x1(torch.cat((height_context, width_context), dim=2))
+            height_gate, width_gate = context.split((height, width), dim=2)
+
+            gated = self.gn(grouped * height_gate.sigmoid() * width_gate.transpose(2, 3).sigmoid())
+            spatial = self.conv3x3(grouped)
+
+            gated_query = gated.mean((2, 3)).unsqueeze(1).softmax(dim=-1)
+            spatial_query = spatial.mean((2, 3)).unsqueeze(1).softmax(dim=-1)
+
+            weights = (gated_query @ spatial.flatten(2) + spatial_query @ gated.flatten(2))
+            weights = weights.reshape(batch * groups, 1, height, width).sigmoid()
+
+            return (grouped * weights).reshape(batch, channels, height, width)
