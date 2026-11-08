@@ -29,10 +29,16 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## Model Checkpoint Weights
+## Model Checkpoint Weights (Folder-Based Discovery)
 
-Place your trained `.pt` weights in `simulator/backend/weights/`:
-- `paddy_yolo_baseline.pt` (Baseline Paddy-YOLO model)
-- `paddy_yolo_ema_dysample.pt` (Improved Paddy-YOLO EMA + DySample model)
+You do **not** need to rename your `.pt` files. Simply drop any `.pt` file (such as `best.pt`, `last.pt`, `epoch300.pt`, etc.) into its corresponding folder:
 
-*Note: If weights are not yet present, the system runs in an automated calibration fallback mode with synthetic detections and measured latencies so the UI is immediately interactive.*
+1. **Original Paddy YOLO** (Baseline):
+   - Drop your `.pt` file into: `simulator/backend/weights/original/`
+
+2. **Paddy YOLO EMA + Dysample** (Improved):
+   - Drop your `.pt` file into: `simulator/backend/weights/improved/`
+
+The backend automatically searches each folder, prioritizing `best.pt` first, or selects the most recent `.pt` file found.
+
+*Note: If weights are not yet present in either folder, the system operates in an automated calibration fallback mode with synthetic detections and measured latencies so the UI is immediately interactive.*
