@@ -11,8 +11,8 @@ from PIL import Image
 
 from simulator.backend.inference import run_dual_inference
 from simulator.backend.model_loader import (
-    BASELINE_WEIGHTS,
-    IMPROVED_WEIGHTS,
+    IMPROVED_FOLDER,
+    ORIGINAL_FOLDER,
     PADDY_MODULES_AVAILABLE,
     get_detectors,
 )
@@ -46,14 +46,18 @@ def health() -> Dict[str, Any]:
         "models": {
             "baseline": {
                 "name": base_det.name,
-                "weights_found": BASELINE_WEIGHTS.exists(),
-                "weights_path": str(BASELINE_WEIGHTS),
+                "folder": str(ORIGINAL_FOLDER),
+                "weights_found": base_det.weights_path is not None and base_det.weights_path.exists(),
+                "weights_file": base_det.weights_path.name if base_det.weights_path else None,
+                "weights_path": str(base_det.weights_path) if base_det.weights_path else None,
                 "is_mock": base_det.is_mock,
             },
             "improved": {
                 "name": impr_det.name,
-                "weights_found": IMPROVED_WEIGHTS.exists(),
-                "weights_path": str(IMPROVED_WEIGHTS),
+                "folder": str(IMPROVED_FOLDER),
+                "weights_found": impr_det.weights_path is not None and impr_det.weights_path.exists(),
+                "weights_file": impr_det.weights_path.name if impr_det.weights_path else None,
+                "weights_path": str(impr_det.weights_path) if impr_det.weights_path else None,
                 "is_mock": impr_det.is_mock,
             },
         },

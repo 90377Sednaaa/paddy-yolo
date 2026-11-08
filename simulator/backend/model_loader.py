@@ -1,7 +1,8 @@
 """Model loader and runtime manager for Paddy YOLO models.
 
 Integrates custom Paddy-YOLO modules (RGG, RepConv, EMA, DySample) with Ultralytics YOLO
-and provides robust fallback simulation when checkpoint weights are being downloaded.
+and provides robust fallback simulation when checkpoint weights are being positioned.
+Automatically discovers any .pt file placed in the dedicated model folders (original vs improved).
 """
 
 import os
@@ -38,8 +39,33 @@ except Exception as e:
 from simulator.backend.stats_data import CLASS_NAMES
 
 WEIGHTS_DIR = Path(__file__).resolve().parent / "weights"
-BASELINE_WEIGHTS = WEIGHTS_DIR / "paddy_yolo_baseline.pt"
-IMPROVED_WEIGHTS = WEIGHTS_DIR / "paddy_yolo_ema_dysample.pt"
+ORIGINAL_FOLDER = WEIGHTS_DIR / "original"
+IMPROVED_FOLDER = WEIGHTS_DIR / "improved"
+
+
+def resolve_model_weights(folder: Path, fallback_filename: str) -> Optional[Path]:
+    """Find any .pt weight file in the target folder regardless of filename.
+    
+    If multiple .pt files exist, prefers 'best.pt' first, otherwise the newest file.
+    Falls back to checking the parent weights directory for the legacy filename.
+    """
+    if folder.exists() and folder.is_dir():
+        pt_files = list(folder.glob("*.pt"))
+        if pt_files:
+            # Prioritize best.pt
+            for f in pt_files:
+                if f.name.lower() == "best.pt":
+                    return f
+            # Otherwise sort by modification time (most recent first)
+            pt_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            return pt_files[0]
+
+    # Fallback to direct file in weights root if present
+    direct_fallback = WEIGHTS_DIR / fallback_filename
+    if direct_fallback.exists() and direct_fallback.is_file():
+        return direct_fallback
+
+    return None
 
 
 class PaddyDetector:
@@ -48,24 +74,28 @@ class PaddyDetector:
     def __init__(
         self,
         name: str,
-        weights_path: Path,
+        folder_path: Path,
+        fallback_filename: str,
         expected_latency_range_ms: Tuple[float, float] = (14.0, 24.0),
     ):
         self.name = name
-        self.weights_path = weights_path
+        self.folder_path = folder_path
+        self.fallback_filename = fallback_filename
         self.expected_latency_range_ms = expected_latency_range_ms
+        self.weights_path: Optional[Path] = None
         self.model = None
         self.is_mock = True
         self._load_model()
 
     def _load_model(self) -> None:
-        if self.weights_path.exists() and self.weights_path.is_file():
+        self.weights_path = resolve_model_weights(self.folder_path, self.fallback_filename)
+        if self.weights_path and self.weights_path.exists() and self.weights_path.is_file():
             try:
                 from ultralytics import YOLO
 
                 self.model = YOLO(str(self.weights_path))
                 self.is_mock = False
-                print(f"Successfully loaded {self.name} weights from {self.weights_path}")
+                print(f"Successfully loaded {self.name} weights from: {self.weights_path}")
             except Exception as e:
                 print(f"Warning: Failed to load {self.weights_path}: {e}. Operating in simulation mode.")
                 self.model = None
@@ -75,20 +105,18 @@ class PaddyDetector:
             self.is_mock = True
 
     def reload(self) -> bool:
-        """Attempt to reload the model from disk (e.g. after user uploads .pt file)."""
+        """Attempt to discover and reload weights from disk."""
         self._load_model()
         return not self.is_mock
 
     def predict(self, image: Image.Image) -> Dict[str, Any]:
         """Run object detection on a PIL image and return detections with latency breakdown."""
         t_start = time.perf_counter()
-
         orig_w, orig_h = image.size
 
         if not self.is_mock and self.model is not None:
             # Native PyTorch / Ultralytics inference
             t_pre_start = time.perf_counter()
-            # Prepare image
             img_np = np.array(image.convert("RGB"))
             preprocess_ms = (time.perf_counter() - t_pre_start) * 1000.0
 
@@ -135,6 +163,7 @@ class PaddyDetector:
         return {
             "model_name": self.name,
             "is_mock": self.is_mock,
+            "weights_file": self.weights_path.name if self.weights_path else None,
             "detections": detections,
             "detection_count": len(detections),
             "image_size": [orig_w, orig_h],
@@ -148,7 +177,6 @@ class PaddyDetector:
 
     def _generate_simulated_detections(self, width: int, height: int) -> List[Dict[str, Any]]:
         """Generate representative detections of rice pest insects with realistic bounds."""
-        # Common pests observed in R2000 dataset
         sample_candidates = [
             (0, "rice leaf roller"),
             (1, "pink rice borer"),
@@ -167,7 +195,6 @@ class PaddyDetector:
 
         detections = []
         for cls_id, species in selected:
-            # Generate plausible normalized bounding boxes
             w_box = random.uniform(width * 0.12, width * 0.35)
             h_box = random.uniform(height * 0.12, height * 0.35)
             x1 = random.uniform(width * 0.08, width - w_box - width * 0.08)
@@ -175,7 +202,6 @@ class PaddyDetector:
             x2 = x1 + w_box
             y2 = y1 + h_box
 
-            # Improved model generally registers higher confidence for subtle pests
             base_conf = random.uniform(0.72, 0.94) if "EMA" in self.name else random.uniform(0.64, 0.88)
 
             detections.append(
@@ -191,17 +217,17 @@ class PaddyDetector:
 
 
 # Singleton detector instances
-# Baseline: ~17.5ms average latency
 baseline_detector = PaddyDetector(
     name="Paddy YOLO",
-    weights_path=BASELINE_WEIGHTS,
+    folder_path=ORIGINAL_FOLDER,
+    fallback_filename="paddy_yolo_baseline.pt",
     expected_latency_range_ms=(16.0, 21.0),
 )
 
-# Improved EMA + DySample: ~14.2ms average latency (fast point sampling & streamlined inference)
 improved_detector = PaddyDetector(
     name="Paddy YOLO EMA + Dysample",
-    weights_path=IMPROVED_WEIGHTS,
+    folder_path=IMPROVED_FOLDER,
+    fallback_filename="paddy_yolo_ema_dysample.pt",
     expected_latency_range_ms=(12.5, 16.5),
 )
 
