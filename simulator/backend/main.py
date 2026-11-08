@@ -1,24 +1,42 @@
 """FastAPI application for Paddy YOLO Dual-Model Comparison Simulator."""
 
 import io
+import sys
 from pathlib import Path
 from typing import Any, Dict
+
+# Ensure backend directory and repo root are in sys.path
+BACKEND_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BACKEND_DIR.parent.parent
+for p in (BACKEND_DIR, REPO_ROOT):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image
 
-from simulator.backend.inference import run_dual_inference
-from simulator.backend.model_loader import (
-    IMPROVED_FOLDER,
-    ORIGINAL_FOLDER,
-    PADDY_MODULES_AVAILABLE,
-    get_detectors,
-)
-from simulator.backend.stats_data import ARCHITECTURE_SPECS, MACRO_METRICS, SPECIES_DATA
+try:
+    from simulator.backend.inference import run_dual_inference
+    from simulator.backend.model_loader import (
+        IMPROVED_FOLDER,
+        ORIGINAL_FOLDER,
+        PADDY_MODULES_AVAILABLE,
+        get_detectors,
+    )
+    from simulator.backend.stats_data import ARCHITECTURE_SPECS, MACRO_METRICS, SPECIES_DATA
+except ImportError:
+    from inference import run_dual_inference
+    from model_loader import (
+        IMPROVED_FOLDER,
+        ORIGINAL_FOLDER,
+        PADDY_MODULES_AVAILABLE,
+        get_detectors,
+    )
+    from stats_data import ARCHITECTURE_SPECS, MACRO_METRICS, SPECIES_DATA
 
-SAMPLES_DIR = Path(__file__).resolve().parent / "samples"
+SAMPLES_DIR = BACKEND_DIR / "samples"
 
 app = FastAPI(
     title="Paddy YOLO Model Comparison Simulator API",

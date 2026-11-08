@@ -1,12 +1,23 @@
 """Inference orchestrator for dual-model asynchronous execution."""
 
 import asyncio
+import sys
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Any, Dict
 
 from PIL import Image
 
-from simulator.backend.model_loader import get_detectors
+BACKEND_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BACKEND_DIR.parent.parent
+for p in (BACKEND_DIR, REPO_ROOT):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
+try:
+    from simulator.backend.model_loader import get_detectors
+except ImportError:
+    from model_loader import get_detectors
 
 _thread_pool = ThreadPoolExecutor(max_workers=4)
 

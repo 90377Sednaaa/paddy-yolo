@@ -36,7 +36,10 @@ except Exception as e:
     PADDY_MODULES_AVAILABLE = False
     print(f"Notice: Paddy custom modules registration deferred: {e}")
 
-from simulator.backend.stats_data import CLASS_NAMES
+try:
+    from simulator.backend.stats_data import CLASS_NAMES
+except ImportError:
+    from stats_data import CLASS_NAMES
 
 WEIGHTS_DIR = Path(__file__).resolve().parent / "weights"
 ORIGINAL_FOLDER = WEIGHTS_DIR / "original"
