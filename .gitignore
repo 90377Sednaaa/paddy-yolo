@@ -11,5 +11,7 @@ runs/
 *.jpg
 !simulator/backend/samples/*.jpg
 !simulator/backend/samples/*.png
+!simulator/frontend/src/assets/*.png
+!simulator/frontend/public/*.png
 
 *.pt

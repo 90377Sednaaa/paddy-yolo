@@ -1,5 +1,6 @@
 import React from 'react';
-import { BarChart3, Cpu, Layers } from 'lucide-react';
+import { BarChart3, Layers } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 interface NavbarProps {
   activeTab: 'simulator' | 'statistics';
@@ -16,8 +17,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="border-b border-[#232d42] bg-[#0a0d14]/90 backdrop-blur sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="h-9 w-9 rounded-lg bg-[#182030] border border-[#334155] flex items-center justify-center text-[#10b981]">
-            <Cpu className="h-5 w-5" />
+          <div className="h-10 w-10 rounded-lg bg-[#111622] border border-[#232d42] p-1 flex items-center justify-center overflow-hidden shadow-inner">
+            <img
+              src={logoImg}
+              alt="Paddy-YOLO Rice Pest Logo"
+              className="h-full w-full object-contain"
+            />
           </div>
           <div>
             <div className="flex items-center space-x-2">
@@ -29,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p className="text-xs text-[#64748b]">
-              Rice Pest Detection & Architecture Simulator
+              Rice Pest Detection & Dual Model Simulator
             </p>
           </div>
         </div>
