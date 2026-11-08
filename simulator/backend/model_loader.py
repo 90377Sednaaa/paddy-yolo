@@ -112,7 +112,7 @@ class PaddyDetector:
         self._load_model()
         return not self.is_mock
 
-    def predict(self, image: Image.Image) -> Dict[str, Any]:
+    def predict(self, image: Image.Image, conf: float = 0.05) -> Dict[str, Any]:
         """Run object detection on a PIL image and return detections with latency breakdown."""
         t_start = time.perf_counter()
         orig_w, orig_h = image.size
@@ -120,11 +120,11 @@ class PaddyDetector:
         if not self.is_mock and self.model is not None:
             # Native PyTorch / Ultralytics inference
             t_pre_start = time.perf_counter()
-            img_np = np.array(image.convert("RGB"))
+            # Pass PIL Image directly so Ultralytics preserves exact RGB color channels without BGR inversion
             preprocess_ms = (time.perf_counter() - t_pre_start) * 1000.0
 
             t_infer_start = time.perf_counter()
-            results = self.model.predict(source=img_np, conf=0.25, verbose=False)
+            results = self.model.predict(source=image, conf=conf, verbose=False)
             inference_ms = (time.perf_counter() - t_infer_start) * 1000.0
 
             t_post_start = time.perf_counter()

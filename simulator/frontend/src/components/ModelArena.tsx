@@ -15,7 +15,7 @@ export const ModelArena: React.FC<ModelArenaProps> = ({
   baselineResult,
   improvedResult,
 }) => {
-  const [minConf, setMinConf] = useState<number>(0.25);
+  const [minConf, setMinConf] = useState<number>(0.20);
 
   return (
     <div className="space-y-4">
@@ -29,7 +29,7 @@ export const ModelArena: React.FC<ModelArenaProps> = ({
         <div className="flex items-center space-x-3">
           <input
             type="range"
-            min="0.10"
+            min="0.05"
             max="0.90"
             step="0.05"
             value={minConf}

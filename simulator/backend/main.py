@@ -120,6 +120,12 @@ def get_sample_images() -> Dict[str, Any]:
             "description": "Flag leaf pest (Scirpophaga incertulas)",
             "url": "/api/samples/sample_yellow_rice_borer.jpg",
         },
+        {
+            "id": "sample_rice_leaf_hopper.jpg",
+            "name": "Rice Leaf Hopper",
+            "description": "Canopy pest (Nephotettix cincticeps)",
+            "url": "/api/samples/sample_rice_leaf_hopper.jpg",
+        },
     ]
     return {"samples": items}
 
