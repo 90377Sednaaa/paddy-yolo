@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class EMA(nn.Module):
@@ -93,9 +94,14 @@ class EMA(nn.Module):
         # 1. Feature grouping: reshape channels into batch dimension
         group_x = x.reshape(b * g, gc, h, w)
 
-        # 2. 1D directional coordinate pooling (Height & Width)
-        x_h = self.pool_h(group_x)
-        x_w = self.pool_w(group_x).permute(0, 1, 3, 2)
+        # 2. 1D directional coordinate pooling (Height & Width) with robust fallback
+        pool_h = getattr(self, "pool_h", None)
+        x_h = pool_h(group_x) if pool_h is not None else F.adaptive_avg_pool2d(group_x, (None, 1))
+
+        pool_w = getattr(self, "pool_w", None)
+        x_w = (
+            pool_w(group_x) if pool_w is not None else F.adaptive_avg_pool2d(group_x, (1, None))
+        ).permute(0, 1, 3, 2)
 
         # 3. Concatenate along spatial dimension & 1x1 conv encoding
         hw = self.conv1x1(torch.cat([x_h, x_w], dim=2))
@@ -108,10 +114,19 @@ class EMA(nn.Module):
         x2 = self.conv3x3(group_x)
 
         # 5. Cross-spatial learning interaction
-        x11 = self.softmax(self.agp(x1).reshape(b * g, -1, 1).permute(0, 2, 1))
-        x12 = x2.reshape(b * g, gc, -1)
+        agp = getattr(self, "agp", None)
+        x1_agp = agp(x1) if agp is not None else F.adaptive_avg_pool2d(x1, (1, 1))
+        x2_agp = agp(x2) if agp is not None else F.adaptive_avg_pool2d(x2, (1, 1))
 
-        x21 = self.softmax(self.agp(x2).reshape(b * g, -1, 1).permute(0, 2, 1))
+        softmax = getattr(self, "softmax", None)
+        if softmax is not None:
+            x11 = softmax(x1_agp.reshape(b * g, -1, 1).permute(0, 2, 1))
+            x21 = softmax(x2_agp.reshape(b * g, -1, 1).permute(0, 2, 1))
+        else:
+            x11 = F.softmax(x1_agp.reshape(b * g, -1, 1).permute(0, 2, 1), dim=-1)
+            x21 = F.softmax(x2_agp.reshape(b * g, -1, 1).permute(0, 2, 1), dim=-1)
+
+        x12 = x2.reshape(b * g, gc, -1)
         x22 = x1.reshape(b * g, gc, -1)
 
         weights = (torch.matmul(x11, x12) + torch.matmul(x21, x22)).reshape(b * g, 1, h, w)
