@@ -14,14 +14,20 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-# Ensure repository root is on sys.path
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+# Ensure repository root and backend directory are on sys.path
+BACKEND_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BACKEND_DIR.parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 # Register custom Paddy-YOLO blocks into Ultralytics
 try:
-    from paddy_yolo.modules.register import register_paddy_modules
+    try:
+        from paddy_yolo.modules.register import register_paddy_modules
+    except ImportError:
+        from simulator.backend.paddy_yolo.modules.register import register_paddy_modules
 
     register_paddy_modules()
     PADDY_MODULES_AVAILABLE = True

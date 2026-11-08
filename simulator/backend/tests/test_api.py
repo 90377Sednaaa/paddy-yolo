@@ -1,9 +1,24 @@
 """Tests for Paddy YOLO Comparison Simulator backend API."""
 
 import io
+import sys
+from pathlib import Path
+
+TEST_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = TEST_DIR.parent
+ROOT_DIR = BACKEND_DIR.parent.parent
+
+for p in (ROOT_DIR, BACKEND_DIR):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
 from fastapi.testclient import TestClient
 from PIL import Image
-from simulator.backend.main import app
+
+try:
+    from simulator.backend.main import app
+except ImportError:
+    from main import app
 
 client = TestClient(app)
 
