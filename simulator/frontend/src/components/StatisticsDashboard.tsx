@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import {
-  BarChart2,
-  Cpu,
-  Download,
-  Layers,
   Search,
+  FileDown,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Database,
 } from 'lucide-react';
 import type {
   ArchitectureSpec,
@@ -20,55 +21,135 @@ interface StatisticsDashboardProps {
   stats: StatisticsData | null;
 }
 
+type MacroMode = 'fold0' | 'fivefold' | 'folds';
+type SortField = 'species' | 'enhanced_map50' | 'delta_vs_paper' | 'delta_vs_recreation';
+
+const DeltaChip: React.FC<{ value: number; unit?: string; signed?: boolean }> = ({
+  value,
+  unit = '%',
+  signed = true,
+}) => (
+  <span className={`delta-chip ${value >= 0 ? 'delta-up' : 'delta-down'}`}>
+    {value > 0 && signed ? '+' : ''}
+    {value.toFixed(2).replace(/\.00$/, '.0')}
+    {unit}
+  </span>
+);
+
+const SectionCaption: React.FC<{
+  index: string;
+  title: string;
+  description: string;
+  children?: React.ReactNode;
+}> = ({ index, title, description, children }) => (
+  <div className="section-caption flex-wrap gap-x-4 gap-y-3">
+    <span className="eyebrow numeric">{index}</span>
+    <h2 className="font-display text-[25px] leading-none font-medium tracking-[-0.02em] text-ink">
+      {title}
+    </h2>
+    <p className="hidden text-[12px] text-ink-3 lg:block">{description}</p>
+    {children && <div className="ml-auto">{children}</div>}
+  </div>
+);
+
+const FoldTable: React.FC<{ title: string; qualifier: string; rows: FoldDetail[] }> = ({
+  title,
+  qualifier,
+  rows,
+}) => (
+  <div>
+    <div className="mb-2 flex items-baseline justify-between gap-3">
+      <h3 className="text-[12px] font-semibold text-ink">{title}</h3>
+      <span className="eyebrow">{qualifier}</span>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-[11px]">
+        <thead>
+          <tr className="border-b border-line">
+            {['Fold', 'P', 'R', 'mAP@50', 'mAP@50-95', 'F1'].map((h, i) => (
+              <th
+                key={h}
+                scope="col"
+                className={`eyebrow py-2 font-medium ${i === 0 ? 'pr-2' : 'px-2 text-right'}`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="numeric divide-y divide-line/70">
+          {rows.map((f) => (
+            <tr
+              key={f.fold}
+              className={`transition-colors hover:bg-surface-2/70 ${
+                f.is_active_checkpoint ? 'bg-leaf-soft/50' : ''
+              }`}
+            >
+              <td className="py-2 pr-2 text-ink">
+                <span className="flex items-center gap-1.5">
+                  Fold {f.fold}
+                  {f.is_active_checkpoint && (
+                    <span className="rounded-[2px] bg-ember-soft px-1 py-0.5 text-[9px] font-medium text-ember">
+                      ACTIVE
+                    </span>
+                  )}
+                </span>
+              </td>
+              <td className="px-2 py-2 text-right text-ink-2">{f.precision.toFixed(1)}</td>
+              <td className="px-2 py-2 text-right text-ink-2">{f.recall.toFixed(1)}</td>
+              <td className="px-2 py-2 text-right font-medium text-ink">{f.map50.toFixed(2)}%</td>
+              <td className="px-2 py-2 text-right text-ink-2">{f.map50_95.toFixed(2)}%</td>
+              <td className="px-2 py-2 text-right text-ink-2">{f.f1.toFixed(1)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({ stats }) => {
-  const [macroMode, setMacroMode] = useState<'fold0' | 'fivefold' | 'folds'>('fold0');
+  const [macroMode, setMacroMode] = useState<MacroMode>('fold0');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<
-    'species' | 'enhanced_map50' | 'delta_vs_paper' | 'delta_vs_recreation'
-  >('enhanced_map50');
+  const [sortBy, setSortBy] = useState<SortField>('enhanced_map50');
   const [sortAsc, setSortAsc] = useState(false);
 
-  // Available taxonomic orders
   const orders = useMemo(() => {
     if (!stats) return ['all'];
-    const set = new Set(stats.species.map((s) => s.order));
-    return ['all', ...Array.from(set)];
+    return ['all', ...Array.from(new Set(stats.species.map((s) => s.order)))];
   }, [stats]);
 
-  // Filtered and sorted species
   const filteredSpecies = useMemo(() => {
     if (!stats) return [];
     return stats.species
       .filter((s) => {
+        const q = searchTerm.trim().toLowerCase();
         const matchesSearch =
-          s.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          s.order.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesOrder = selectedOrder === 'all' || s.order.toLowerCase() === selectedOrder.toLowerCase();
+          !q || s.species.toLowerCase().includes(q) || s.order.toLowerCase().includes(q);
+        const matchesOrder =
+          selectedOrder === 'all' || s.order.toLowerCase() === selectedOrder.toLowerCase();
         return matchesSearch && matchesOrder;
       })
       .sort((a, b) => {
-        const valA: any = a[sortBy];
-        const valB: any = b[sortBy];
-        if (typeof valA === 'string') {
-          return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-        return sortAsc ? valA - valB : valB - valA;
+        const va = a[sortBy];
+        const vb = b[sortBy];
+        const cmp =
+          typeof va === 'string' && typeof vb === 'string'
+            ? va.localeCompare(vb)
+            : (va as number) - (vb as number);
+        return sortAsc ? cmp : -cmp;
       });
   }, [stats, searchTerm, selectedOrder, sortBy, sortAsc]);
 
-  const toggleSort = (
-    field: 'species' | 'enhanced_map50' | 'delta_vs_paper' | 'delta_vs_recreation'
-  ) => {
-    if (sortBy === field) {
-      setSortAsc(!sortAsc);
-    } else {
+  const toggleSort = (field: SortField) => {
+    if (sortBy === field) setSortAsc((v) => !v);
+    else {
       setSortBy(field);
       setSortAsc(false);
     }
   };
 
-  // Export to CSV
   const handleExportCSV = () => {
     if (!stats) return;
     const headers = [
@@ -85,7 +166,6 @@ export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({ stats 
       'Delta vs Paper (%)',
       'Delta vs Recreation (%)',
     ];
-
     const rows = stats.species.map((s) => [
       s.class_id,
       `"${s.species}"`,
@@ -100,14 +180,12 @@ export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({ stats 
       s.delta_vs_paper.toFixed(2),
       s.delta_vs_recreation.toFixed(2),
     ]);
-
-    const csvContent =
+    const csv =
       'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'PaddyYOLO_Species_Benchmark.csv');
+    link.href = encodeURI(csv);
+    link.download = 'PaddyYOLO_Species_Benchmark.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -115,551 +193,418 @@ export const StatisticsDashboard: React.FC<StatisticsDashboardProps> = ({ stats 
 
   if (!stats) {
     return (
-      <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-12 text-center">
-        <p className="text-sm text-[#8b949e]">Loading benchmark statistics...</p>
+      <div className="panel mt-8 flex flex-col items-center gap-3 px-6 py-16 text-center">
+        <Database className="h-6 w-6 text-ink-3" />
+        <h2 className="font-display text-[24px] text-ink">Benchmark data unavailable</h2>
+        <p className="max-w-sm text-[13px] leading-relaxed text-ink-2">
+          Results are served by the evaluation backend. Start the API on 127.0.0.1:8000 to load the
+          published comparison tables.
+        </p>
       </div>
     );
   }
 
+  const primary =
+    stats.macro.fold0_rows.find((r) => /^mAP@50 \(/.test(r.metric)) ?? stats.macro.fold0_rows[0];
+  const secondary = stats.macro.fold0_rows.filter((r) => r !== primary).slice(0, 3);
+  const fiveFoldPrimary = stats.macro.five_fold_rows[0];
+  const comparison = [
+    { label: 'Published paper', value: primary.paper, color: 'var(--c-ink-3)' },
+    { label: 'Baseline recreation', value: primary.recreation, color: 'var(--c-baseline)' },
+    { label: 'Enhanced architecture', value: primary.enhanced, color: 'var(--c-leaf)' },
+  ];
+  const maxComparison = Math.max(...comparison.map((c) => c.value), 1);
+
+  const macroModes: { id: MacroMode; label: string }[] = [
+    { id: 'fold0', label: 'Fold 0 · active checkpoint' },
+    { id: 'fivefold', label: '5-fold · mean ± σ' },
+    { id: 'folds', label: 'Individual folds' },
+  ];
+
+  const sortHeader = (field: SortField, label: string, align: 'left' | 'right' = 'right') => (
+    <th
+      scope="col"
+      aria-sort={sortBy === field ? (sortAsc ? 'ascending' : 'descending') : 'none'}
+      className={`px-3 py-3 font-medium ${align === 'right' ? 'text-right' : 'text-left'}`}
+    >
+      <button
+        type="button"
+        onClick={() => toggleSort(field)}
+        className={`eyebrow inline-flex items-center gap-1.5 transition-colors hover:text-ink ${
+          sortBy === field ? 'text-ink' : ''
+        }`}
+      >
+        <span>{label}</span>
+        {sortBy === field ? (
+          sortAsc ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-50" />
+        )}
+        {align === 'right' && <span className="sr-only">sort</span>}
+      </button>
+    </th>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* 1. Scientific Research KPI Banners */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-4">
-          <div className="flex items-center justify-between text-xs text-[#8b949e] mb-1">
-            <span className="font-medium uppercase tracking-wider text-[10px]">mAP@50 Gain</span>
-            <span className="font-mono text-white text-[11px]">+11.28% vs Rec</span>
+    <div className="space-y-9 pt-7">
+      {/* Editorial page header */}
+      <header className="animate-rise">
+        <div className="flex items-center gap-3">
+          <span className="eyebrow eyebrow-ink">Workspace 02 / published results</span>
+          <span className="h-px w-8 bg-line-strong" />
+          <span className="eyebrow">Reproducible audit</span>
+        </div>
+        <h2 className="mt-2 font-display text-[clamp(34px,4.4vw,52px)] leading-[1.03] font-medium tracking-[-0.03em] text-ink">
+          Benchmark evidence
+        </h2>
+        <p className="mt-2 max-w-[680px] text-[13px] leading-relaxed text-ink-2">
+          A reproducible comparison of the published Paddy-YOLO results, the baseline recreation, and
+          the enhanced EMA + DySample architecture across the full rice pest dataset.
+        </p>
+      </header>
+
+      {/* Primary endpoint — display number plus a three-way comparison */}
+      <section className="animate-rise-2 grid grid-cols-1 gap-8 border-y border-line py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-14">
+        <div>
+          <span className="eyebrow eyebrow-ink">Primary endpoint / mAP@50 · fold 0</span>
+          <div className="numeric mt-3 flex items-baseline gap-1 font-display leading-[0.86] font-medium tracking-[-0.045em] text-ink">
+            <span className="text-[clamp(64px,9vw,108px)]">{primary.enhanced.toFixed(2)}</span>
+            <span className="text-[clamp(28px,3.6vw,44px)] text-ink-2">%</span>
           </div>
-          <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-2xl font-bold text-white tabular-nums">78.83%</span>
-            <span className="text-xs text-[#3fb950] font-medium">(+8.63% vs Paper)</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <DeltaChip value={primary.delta_vs_paper} />
+            <span className="text-[11px] text-ink-3">vs published paper</span>
+            <span className="mx-1 h-3 w-px bg-line" />
+            <DeltaChip value={primary.delta_vs_recreation} />
+            <span className="text-[11px] text-ink-3">vs baseline recreation</span>
           </div>
-          <div className="mt-2 text-[10px] text-[#656d76] font-mono">
-            Fold 0 Active Checkpoint · Baseline: 67.55%
-          </div>
+          <p className="mt-5 max-w-[420px] text-[12px] leading-relaxed text-ink-2">
+            Measured on the active checkpoint of the first holdout fold. Five-fold cross-validation
+            across all 2,024 images reports{' '}
+            <span className="numeric font-medium text-ink">{fiveFoldPrimary?.enhanced ?? '—'}</span> with
+            substantially tighter variance.
+          </p>
         </div>
 
-        <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-4">
-          <div className="flex items-center justify-between text-xs text-[#8b949e] mb-1">
-            <span className="font-medium uppercase tracking-wider text-[10px]">mAP@50-95 Strict</span>
-            <span className="font-mono text-white text-[11px]">+13.41% vs Rec</span>
-          </div>
-          <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-2xl font-bold text-white tabular-nums">61.16%</span>
-            <span className="text-xs text-[#3fb950] font-medium">(+9.66% vs Paper)</span>
-          </div>
-          <div className="mt-2 text-[10px] text-[#656d76] font-mono">
-            Higher IoU threshold bounding box alignment
-          </div>
-        </div>
-
-        <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-4">
-          <div className="flex items-center justify-between text-xs text-[#8b949e] mb-1">
-            <span className="font-medium uppercase tracking-wider text-[10px]">Small Pest Recall</span>
-            <span className="font-mono text-white text-[11px]">+9.68%</span>
-          </div>
-          <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-2xl font-bold text-white tabular-nums">71.50%</span>
-            <span className="text-xs text-[#3fb950] font-medium">(+8.50% vs Paper)</span>
-          </div>
-          <div className="mt-2 text-[10px] text-[#656d76] font-mono">
-            Reduction in false negatives on rice tillers
-          </div>
-        </div>
-
-        <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-4">
-          <div className="flex items-center justify-between text-xs text-[#8b949e] mb-1">
-            <span className="font-medium uppercase tracking-wider text-[10px]">5-Fold Cross-Val</span>
-            <span className="text-[#8b949e] font-mono text-[11px]">μ ± σ</span>
-          </div>
-          <div className="flex items-baseline space-x-1.5 font-mono">
-            <span className="text-2xl font-bold text-white tabular-nums">77.45%</span>
-            <span className="text-xs text-[#8b949e]">± 3.25%</span>
-          </div>
-          <div className="mt-2 text-[10px] text-[#656d76] font-mono">
-            Full 2,024 images 5-partition holdout evaluation
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Macro Benchmark Evaluation (Paper vs Recreation vs Enhanced) */}
-      <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-          <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 rounded-lg bg-[#171e28] border border-[#1c2432] flex items-center justify-center text-[#8b949e]">
-              <BarChart2 className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-sm font-semibold text-white tracking-tight">
-                  Macro Benchmark Evaluation
-                </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#171e28] border border-[#1c2432] text-[#8b949e]">
-                  Table 8 Benchmark Audit
-                </span>
+        <div className="flex flex-col justify-center">
+          <span className="eyebrow">mAP@50 · three-way comparison</span>
+          <div className="mt-5 space-y-4">
+            {comparison.map((c) => (
+              <div key={c.label}>
+                <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                  <span className="text-[12px] text-ink-2">{c.label}</span>
+                  <span className="numeric text-[13px] font-medium text-ink">
+                    {c.value.toFixed(2)}%
+                  </span>
+                </div>
+                <div className="h-[7px] w-full overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className="animate-bar h-full origin-left rounded-full opacity-90"
+                    style={{ width: `${(c.value / maxComparison) * 100}%`, backgroundColor: c.color }}
+                  />
+                </div>
               </div>
-              <p className="text-xs text-[#656d76]">
-                Published Paper (Zheng et al., 2025) vs Baseline Recreation vs Enhanced Paddy-YOLO
-              </p>
+            ))}
+          </div>
+          <p className="eyebrow mt-5">Bars scaled to the strongest result</p>
+        </div>
+      </section>
+
+      {/* Supporting endpoints — a ruled row instead of four identical cards */}
+      <section className="animate-rise-3 grid grid-cols-1 border-b border-line pb-7 sm:grid-cols-3 sm:divide-x sm:divide-line">
+        {secondary.map((row) => (
+          <div key={row.metric} className="border-b border-line py-4 sm:border-b-0 sm:px-6 sm:py-0 sm:first:pl-0">
+            <span className="eyebrow">{row.metric}</span>
+            <div className="numeric mt-2 font-display text-[32px] leading-none font-medium tracking-[-0.03em] text-ink">
+              {row.enhanced.toFixed(2)}
+              <span className="ml-0.5 text-[16px] text-ink-3">{row.unit}</span>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <DeltaChip value={row.delta_vs_recreation} unit={row.unit} />
+              <span className="text-[11px] text-ink-3">vs recreation</span>
             </div>
           </div>
+        ))}
+      </section>
 
-          {/* Sub-view toggle */}
-          <div className="flex items-center p-1 bg-[#171e28] rounded-lg border border-[#1c2432] text-xs">
-            <button
-              onClick={() => setMacroMode('fold0')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                macroMode === 'fold0'
-                  ? 'bg-[#1f2735] text-white shadow-xs'
-                  : 'text-[#8b949e] hover:text-white'
-              }`}
-            >
-              Fold 0 (Active Checkpoint)
-            </button>
-            <button
-              onClick={() => setMacroMode('fivefold')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                macroMode === 'fivefold'
-                  ? 'bg-[#1f2735] text-white shadow-xs'
-                  : 'text-[#8b949e] hover:text-white'
-              }`}
-            >
-              5-Fold Cross-Val (μ ± σ)
-            </button>
-            <button
-              onClick={() => setMacroMode('folds')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                macroMode === 'folds'
-                  ? 'bg-[#1f2735] text-white shadow-xs'
-                  : 'text-[#8b949e] hover:text-white'
-              }`}
-            >
-              Individual Folds
-            </button>
+      {/* 01 · Macro benchmark */}
+      <section>
+        <SectionCaption
+          index="01"
+          title="Macro benchmark"
+          description="Published paper vs baseline recreation vs enhanced architecture"
+        >
+          <div className="flex flex-wrap items-center gap-4">
+            {macroModes.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                data-active={macroMode === m.id}
+                onClick={() => setMacroMode(m.id)}
+                className="tab-link py-1.5 text-[12px]"
+              >
+                {m.label}
+              </button>
+            ))}
           </div>
-        </div>
+        </SectionCaption>
 
-        {/* View A: Fold 0 Active Checkpoint Evaluation */}
-        {macroMode === 'fold0' && (
-          <div className="space-y-3">
+        {macroMode === 'folds' ? (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <FoldTable
+              title="Baseline recreation"
+              qualifier="Paddy YOLO"
+              rows={stats.macro.folds.recreation}
+            />
+            <FoldTable
+              title="Enhanced architecture"
+              qualifier="EMA + DySample"
+              rows={stats.macro.folds.enhanced}
+            />
+          </div>
+        ) : (
+          <div className="panel overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#1c2432] text-[#8b949e] uppercase tracking-wider font-semibold text-[11px]">
-                    <th className="py-2.5 px-3">Metric</th>
-                    <th className="py-2.5 px-3 text-right">Paper (Published)</th>
-                    <th className="py-2.5 px-3 text-right">Recreation (Baseline)</th>
-                    <th className="py-2.5 px-3 text-right text-white">Enhanced (Fold 0)</th>
-                    <th className="py-2.5 px-3 text-right">Δ vs Paper</th>
-                    <th className="py-2.5 px-3 text-right">Δ vs Recreation</th>
+              <table className="w-full min-w-[760px] text-left text-[12px]">
+                <thead className="bg-surface-2">
+                  <tr className="border-b border-line">
+                    <th scope="col" className="eyebrow px-4 py-3 font-medium">Metric</th>
+                    <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">Paper</th>
+                    <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">Recreation</th>
+                    <th scope="col" className="eyebrow eyebrow-leaf bg-leaf-soft/50 px-3 py-3 text-right font-medium">
+                      Enhanced
+                    </th>
+                    <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">Δ vs paper</th>
+                    <th scope="col" className="eyebrow px-4 py-3 text-right font-medium">Δ vs rec</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1c2432]/60 font-mono tabular-nums">
-                  {stats.macro.fold0_rows.map((row: MacroFold0Row, i: number) => {
-                    const isPosPaper = row.delta_vs_paper > 0;
-                    const isPosRec = row.delta_vs_recreation > 0;
-                    return (
-                      <tr key={i} className="hover:bg-[#171e28]/50 transition-colors">
-                        <td className="py-2.5 px-3 font-sans font-medium text-white">
-                          {row.metric}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-[#8b949e]">
-                          {row.paper.toFixed(2)}{row.unit}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-[#8b949e]">
-                          {row.recreation.toFixed(2)}{row.unit}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-medium text-white text-[13px]">
-                          {row.enhanced.toFixed(2)}{row.unit}
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              isPosPaper
-                                ? 'bg-[#1a2e22] text-[#3fb950] border border-[#23422e]'
-                                : 'bg-[#2d1b1f] text-[#f85149] border border-[#432328]'
-                            }`}
-                          >
-                            {isPosPaper ? `+${row.delta_vs_paper.toFixed(2)}` : row.delta_vs_paper.toFixed(2)}{row.unit}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              isPosRec
-                                ? 'bg-[#1a2e22] text-[#3fb950] border border-[#23422e]'
-                                : 'bg-[#2d1b1f] text-[#f85149] border border-[#432328]'
-                            }`}
-                          >
-                            {isPosRec ? `+${row.delta_vs_recreation.toFixed(2)}` : row.delta_vs_recreation.toFixed(2)}{row.unit}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <tbody className="numeric divide-y divide-line/70">
+                  {macroMode === 'fold0'
+                    ? stats.macro.fold0_rows.map((row: MacroFold0Row) => (
+                        <tr key={row.metric} className="transition-colors hover:bg-surface-2/60">
+                          <th scope="row" className="px-4 py-3 text-left font-sans text-[12px] font-medium text-ink">
+                            {row.metric}
+                          </th>
+                          <td className="px-3 py-3 text-right text-ink-2">
+                            {row.paper.toFixed(2)}{row.unit}
+                          </td>
+                          <td className="px-3 py-3 text-right text-ink-2">
+                            {row.recreation.toFixed(2)}{row.unit}
+                          </td>
+                          <td className="bg-leaf-soft/40 px-3 py-3 text-right text-[14px] font-medium text-ink">
+                            {row.enhanced.toFixed(2)}{row.unit}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <DeltaChip value={row.delta_vs_paper} unit={row.unit} />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <DeltaChip value={row.delta_vs_recreation} unit={row.unit} />
+                          </td>
+                        </tr>
+                      ))
+                    : stats.macro.five_fold_rows.map((row: MacroFiveFoldRow) => (
+                        <tr key={row.metric} className="transition-colors hover:bg-surface-2/60">
+                          <th scope="row" className="px-4 py-3 text-left font-sans text-[12px] font-medium text-ink">
+                            {row.metric}
+                          </th>
+                          <td className="px-3 py-3 text-right text-ink-2">{row.paper}</td>
+                          <td className="px-3 py-3 text-right text-ink-2">{row.recreation}</td>
+                          <td className="bg-leaf-soft/40 px-3 py-3 text-right text-[14px] font-medium text-ink">
+                            {row.enhanced}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <span className="delta-chip delta-up">{row.delta_vs_paper}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="delta-chip delta-up">{row.delta_vs_recreation}</span>
+                          </td>
+                        </tr>
+                      ))}
                 </tbody>
               </table>
+            </div>
+            <div className="flex items-center justify-between border-t border-line bg-surface-2/50 px-4 py-2.5">
+              <span className="eyebrow">
+                {macroMode === 'fold0'
+                  ? 'Table 8 audit · fold 0 active checkpoint'
+                  : 'Five-partition holdout · mean ± standard deviation'}
+              </span>
+              <span className="eyebrow">{stats.macro.fold0_rows.length} endpoints</span>
             </div>
           </div>
         )}
+      </section>
 
-        {/* View B: 5-Fold Cross-Validation Macro Average (μ ± σ) */}
-        {macroMode === 'fivefold' && (
-          <div className="space-y-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#1c2432] text-[#8b949e] uppercase tracking-wider font-semibold text-[11px]">
-                    <th className="py-2.5 px-3">Metric</th>
-                    <th className="py-2.5 px-3 text-right">Paper (Published)</th>
-                    <th className="py-2.5 px-3 text-right">Recreation (5-Fold μ ± σ)</th>
-                    <th className="py-2.5 px-3 text-right text-white">Enhanced (5-Fold μ ± σ)</th>
-                    <th className="py-2.5 px-3 text-right">Δ vs Paper</th>
-                    <th className="py-2.5 px-3 text-right">Δ vs Recreation</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1c2432]/60 font-mono tabular-nums">
-                  {stats.macro.five_fold_rows.map((row: MacroFiveFoldRow, i: number) => (
-                    <tr key={i} className="hover:bg-[#171e28]/50 transition-colors">
-                      <td className="py-2.5 px-3 font-sans font-medium text-white">
-                        {row.metric}
-                      </td>
-                      <td className="py-2.5 px-3 text-right text-[#8b949e]">
-                        {row.paper}
-                      </td>
-                      <td className="py-2.5 px-3 text-right text-[#8b949e]">
-                        {row.recreation}
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-white text-[13px]">
-                        {row.enhanced}
-                      </td>
-                      <td className="py-2.5 px-3 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#1a2e22] text-[#3fb950] border border-[#23422e]">
-                          {row.delta_vs_paper}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#1a2e22] text-[#3fb950] border border-[#23422e]">
-                          {row.delta_vs_recreation}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+      {/* 02 · Species-level benchmark */}
+      <section>
+        <SectionCaption
+          index="02"
+          title="Species-level results"
+          description="Per-class detection accuracy across 16 rice pest species"
+        >
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="ctl h-9 gap-2 px-3 text-[11px] font-medium"
+            title="Export the complete species dataset as CSV"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+            Export CSV
+          </button>
+        </SectionCaption>
 
-        {/* View C: Individual Folds Detailed Breakdown */}
-        {macroMode === 'folds' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
-            {/* Recreation Folds */}
-            <div className="bg-[#0b0f14] rounded-lg border border-[#1c2432] p-3.5">
-              <div className="flex items-center justify-between pb-2 border-b border-[#1c2432] mb-2.5">
-                <span className="text-xs font-medium text-white uppercase tracking-wider">
-                  Baseline Recreation (5 Folds)
-                </span>
-                <span className="text-[10px] font-mono text-[#656d76]">Paddy-YOLO</span>
-              </div>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#1c2432] text-[#8b949e] font-mono text-[10px]">
-                    <th className="py-2 px-2">Fold</th>
-                    <th className="py-2 px-2 text-right">P (%)</th>
-                    <th className="py-2 px-2 text-right">R (%)</th>
-                    <th className="py-2 px-2 text-right">mAP@50</th>
-                    <th className="py-2 px-2 text-right">mAP@50-95</th>
-                    <th className="py-2 px-2 text-right">F1</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1c2432]/40 font-mono tabular-nums text-[11px]">
-                  {stats.macro.folds.recreation.map((f: FoldDetail) => (
-                    <tr
-                      key={f.fold}
-                      className={f.is_active_checkpoint ? 'bg-[#171e28] font-medium' : 'hover:bg-[#171e28]/40'}
-                    >
-                      <td className="py-2 px-2 text-white flex items-center space-x-1">
-                        <span>Fold {f.fold}</span>
-                        {f.is_active_checkpoint && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-[#1c2432] text-[#8b949e] border border-[#283344]">
-                            best.pt
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.precision.toFixed(1)}</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.recall.toFixed(1)}</td>
-                      <td className="py-2 px-2 text-right text-white font-medium">{f.map50.toFixed(2)}%</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.map50_95.toFixed(2)}%</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.f1.toFixed(1)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Enhanced Folds */}
-            <div className="bg-[#0b0f14] rounded-lg border border-[#1c2432] p-3.5">
-              <div className="flex items-center justify-between pb-2 border-b border-[#1c2432] mb-2.5">
-                <span className="text-xs font-medium text-white uppercase tracking-wider">
-                  Enhanced Architecture (5 Folds)
-                </span>
-                <span className="text-[10px] font-mono text-[#656d76]">EMA + DySample</span>
-              </div>
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-[#1c2432] text-[#8b949e] font-mono text-[10px]">
-                    <th className="py-2 px-2">Fold</th>
-                    <th className="py-2 px-2 text-right">P (%)</th>
-                    <th className="py-2 px-2 text-right">R (%)</th>
-                    <th className="py-2 px-2 text-right">mAP@50</th>
-                    <th className="py-2 px-2 text-right">mAP@50-95</th>
-                    <th className="py-2 px-2 text-right">F1</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1c2432]/40 font-mono tabular-nums text-[11px]">
-                  {stats.macro.folds.enhanced.map((f: FoldDetail) => (
-                    <tr
-                      key={f.fold}
-                      className={f.is_active_checkpoint ? 'bg-[#171e28] font-medium' : 'hover:bg-[#171e28]/40'}
-                    >
-                      <td className="py-2 px-2 text-white flex items-center space-x-1">
-                        <span>Fold {f.fold}</span>
-                        {f.is_active_checkpoint && (
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-[#1c2432] text-white border border-[#283344]">
-                            best.pt
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.precision.toFixed(1)}</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.recall.toFixed(1)}</td>
-                      <td className="py-2 px-2 text-right text-white font-medium">{f.map50.toFixed(2)}%</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.map50_95.toFixed(2)}%</td>
-                      <td className="py-2 px-2 text-right text-[#8b949e]">{f.f1.toFixed(1)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3. 16 Rice Pest Species Detailed Benchmark */}
-      <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-5 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 rounded-lg bg-[#171e28] border border-[#1c2432] flex items-center justify-center text-[#8b949e]">
-              <Layers className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white tracking-tight">
-                16 Rice Pest Species Detailed Benchmark
-              </h3>
-              <p className="text-xs text-[#656d76]">
-                Species-level detection accuracy (mAP@50 μ ± σ) comparing Paper, Recreation, and Enhanced Paddy-YOLO
-              </p>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#656d76]" />
+              <label htmlFor="species-search" className="sr-only">Search species</label>
+              <Search className="absolute top-2.5 left-2.5 h-3.5 w-3.5 text-ink-3" />
               <input
-                type="text"
-                placeholder="Search species..."
+                id="species-search"
+                type="search"
+                placeholder="Search species or order…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#0b0f14] text-xs text-white pl-8 pr-3 py-1.5 rounded-lg border border-[#1c2432] focus:outline-none focus:border-[#388bfd] w-40 placeholder-[#656d76]"
+                className="h-9 w-[220px] rounded-[4px] border border-line bg-surface pr-3 pl-8 text-[12px] text-ink placeholder:text-ink-3 focus:border-leaf focus:outline-none"
               />
             </div>
-
-            <div className="flex items-center p-0.5 bg-[#0b0f14] rounded-lg border border-[#1c2432] text-[11px]">
+            <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Filter by taxonomic order">
               {orders.map((ord) => (
                 <button
                   key={ord}
+                  type="button"
                   onClick={() => setSelectedOrder(ord)}
-                  className={`px-2 py-1 rounded capitalize transition-colors ${
-                    selectedOrder.toLowerCase() === ord.toLowerCase()
-                      ? 'bg-[#1f2735] text-white font-medium'
-                      : 'text-[#656d76] hover:text-[#8b949e]'
+                  className={`ctl h-8 px-2.5 text-[11px] capitalize ${
+                    selectedOrder === ord ? 'font-semibold' : ''
                   }`}
+                  data-on={selectedOrder === ord}
                 >
-                  {ord}
+                  {ord === 'all' ? 'All orders' : ord}
                 </button>
               ))}
             </div>
-
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#171e28] hover:bg-[#1f2735] border border-[#1c2432] hover:border-[#283344] text-xs font-medium text-white transition-colors"
-              title="Export complete 16 species dataset to CSV"
-            >
-              <Download className="h-3.5 w-3.5 text-[#8b949e]" />
-              <span>Export CSV</span>
-            </button>
           </div>
+          <span className="eyebrow numeric">
+            {filteredSpecies.length} / {stats.species.length} species shown
+          </span>
         </div>
 
-        {/* Species Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#1c2432] text-[#8b949e] uppercase tracking-wider font-semibold text-[11px]">
-                <th
-                  onClick={() => toggleSort('species')}
-                  className="py-2.5 px-3 cursor-pointer hover:text-white transition-colors"
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Species</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-2.5">Order</th>
-                <th className="py-2.5 px-2.5 text-right">Paper mAP@50</th>
-                <th className="py-2.5 px-2.5 text-right">Rec mAP@50</th>
-                <th
-                  onClick={() => toggleSort('enhanced_map50')}
-                  className="py-2.5 px-3 text-right text-white cursor-pointer hover:text-[#8b949e] transition-colors"
-                >
-                  <div className="flex items-center justify-end space-x-1">
-                    <span>Enhanced mAP@50</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-2.5 text-right">P / R</th>
-                <th className="py-2.5 px-2.5 text-right">mAP@50-95</th>
-                <th
-                  onClick={() => toggleSort('delta_vs_paper')}
-                  className="py-2.5 px-3 text-right cursor-pointer hover:text-white transition-colors"
-                >
-                  <div className="flex items-center justify-end space-x-1">
-                    <span>Δ vs Paper</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th
-                  onClick={() => toggleSort('delta_vs_recreation')}
-                  className="py-2.5 px-3 text-right cursor-pointer hover:text-white transition-colors"
-                >
-                  <div className="flex items-center justify-end space-x-1">
-                    <span>Δ vs Rec</span>
-                    <ArrowUpDown className="h-3 w-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-3">Visual Gain</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1c2432]/60 font-mono tabular-nums">
-              {filteredSpecies.map((item: SpeciesItem) => {
-                const isPosPaper = item.delta_vs_paper > 0;
-                const isPosRec = item.delta_vs_recreation > 0;
-                const gainPct = Math.min(100, Math.max(0, (item.delta_vs_recreation / 20) * 100));
-
-                return (
-                  <tr key={item.class_id} className="hover:bg-[#171e28]/50 transition-colors">
-                    <td className="py-2.5 px-3 font-sans font-medium text-white capitalize">
-                      {item.species}
-                    </td>
-                    <td className="py-2.5 px-2.5 text-[#656d76] font-sans text-[11px]">
-                      {item.order}
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right text-[#8b949e]">
-                      {item.paper_map50.toFixed(1)}%
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right text-[#8b949e]">
-                      {item.recreation_map50.toFixed(1)}%
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-medium text-white text-[13px]">
-                      {item.enhanced_map50.toFixed(1)}%
-                      <span className="text-[10px] text-[#656d76] ml-1 font-normal">
-                        ±{item.enhanced_map50_std.toFixed(1)}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right text-[#8b949e] text-[11px]">
-                      {item.enhanced_p.toFixed(0)}% / {item.enhanced_r.toFixed(0)}%
-                    </td>
-                    <td className="py-2.5 px-2.5 text-right text-[#8b949e]">
-                      {item.enhanced_map50_95.toFixed(1)}%
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                          isPosPaper
-                            ? 'bg-[#1a2e22] text-[#3fb950] border border-[#23422e]'
-                            : 'bg-[#2d1b1f] text-[#f85149] border border-[#432328]'
-                        }`}
-                      >
-                        {isPosPaper ? `+${item.delta_vs_paper.toFixed(1)}%` : `${item.delta_vs_paper.toFixed(1)}%`}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                          isPosRec
-                            ? 'bg-[#1a2e22] text-[#3fb950] border border-[#23422e]'
-                            : 'bg-[#2d1b1f] text-[#f85149] border border-[#432328]'
-                        }`}
-                      >
-                        {isPosRec ? `+${item.delta_vs_recreation.toFixed(1)}%` : `${item.delta_vs_recreation.toFixed(1)}%`}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 min-w-[80px]">
-                      <div className="h-1.5 w-full bg-[#1c2432] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#3fb950] rounded-full opacity-80"
-                          style={{ width: `${gainPct}%` }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 4. Architectural Innovations & Ablation Matrix */}
-      <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-5 shadow-xs">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="h-8 w-8 rounded-lg bg-[#171e28] border border-[#1c2432] flex items-center justify-center text-[#8b949e]">
-            <Cpu className="h-4 w-4" />
+        <div className="panel overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-left text-[12px]">
+              <thead className="bg-surface-2">
+                <tr className="border-b border-line">
+                  {sortHeader('species', 'Species', 'left')}
+                  <th scope="col" className="eyebrow px-3 py-3 font-medium">Order</th>
+                  <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">Paper</th>
+                  <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">Recreation</th>
+                  {sortHeader('enhanced_map50', 'Enhanced mAP@50')}
+                  <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">P / R</th>
+                  <th scope="col" className="eyebrow px-3 py-3 text-right font-medium">mAP@50-95</th>
+                  {sortHeader('delta_vs_paper', 'Δ vs paper')}
+                  {sortHeader('delta_vs_recreation', 'Δ vs rec')}
+                  <th scope="col" className="eyebrow px-4 py-3 font-medium">Relative gain</th>
+                </tr>
+              </thead>
+              <tbody className="numeric divide-y divide-line/70">
+                {filteredSpecies.map((item: SpeciesItem) => {
+                  const gainPct = Math.min(100, Math.max(0, (item.delta_vs_recreation / 20) * 100));
+                  return (
+                    <tr key={item.class_id} className="transition-colors hover:bg-surface-2/60">
+                      <th scope="row" className="px-3 py-2.5 text-left font-sans text-[12px] font-medium text-ink capitalize">
+                        {item.species}
+                      </th>
+                      <td className="px-3 py-2.5 font-sans text-[11px] text-ink-3">{item.order}</td>
+                      <td className="px-3 py-2.5 text-right text-ink-2">{item.paper_map50.toFixed(1)}%</td>
+                      <td className="px-3 py-2.5 text-right text-ink-2">{item.recreation_map50.toFixed(1)}%</td>
+                      <td className="bg-leaf-soft/40 px-3 py-2.5 text-right text-[13px] font-medium text-ink">
+                        {item.enhanced_map50.toFixed(1)}%
+                        <span className="ml-1 text-[10px] font-normal text-ink-3">
+                          ±{item.enhanced_map50_std.toFixed(1)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-[11px] text-ink-2">
+                        {item.enhanced_p.toFixed(0)} / {item.enhanced_r.toFixed(0)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-ink-2">{item.enhanced_map50_95.toFixed(1)}%</td>
+                      <td className="px-3 py-2.5 text-right">
+                        <DeltaChip value={item.delta_vs_paper} />
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <DeltaChip value={item.delta_vs_recreation} />
+                      </td>
+                      <td className="min-w-[110px] px-4 py-2.5">
+                        <div className="h-[4px] w-full overflow-hidden rounded-full bg-line">
+                          <div
+                            className="h-full rounded-full bg-leaf transition-all duration-500"
+                            style={{ width: `${gainPct}%` }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white tracking-tight">
-              Architectural Specifications & Ablation Rationale
-            </h3>
-            <p className="text-xs text-[#656d76]">
-              Structural comparison of baseline Paddy-YOLO vs EMA attention and DySample dynamic upsampling
-            </p>
+
+          {filteredSpecies.length === 0 && (
+            <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+              <X className="h-4 w-4 text-ink-3" />
+              <p className="text-[13px] text-ink-2">No species match the current filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedOrder('all');
+                }}
+                className="ctl mt-1 h-8 px-3 text-[11px] font-medium"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t border-line bg-surface-2/50 px-4 py-2.5">
+            <span className="eyebrow">mAP@50 shown as mean ± standard deviation over five folds</span>
+            <span className="eyebrow">Click a column heading to sort</span>
           </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {stats.architecture.map((item: ArchitectureSpec, i: number) => (
+      {/* 03 · Architecture — definition list, no nested cards */}
+      <section>
+        <SectionCaption
+          index="03"
+          title="Architecture & ablation"
+          description="Structural differences between the two evaluated models"
+        />
+        <dl className="grid grid-cols-1 gap-x-12 lg:grid-cols-2">
+          {stats.architecture.map((item: ArchitectureSpec) => (
             <div
-              key={i}
-              className="bg-[#0b0f14] rounded-lg border border-[#1c2432] p-3.5 flex flex-col justify-between"
+              key={item.component}
+              className="grid grid-cols-1 gap-3 border-b border-line py-4 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-5"
             >
-              <span className="text-[10px] font-semibold text-[#8b949e] uppercase tracking-wider mb-2 block">
-                {item.component}
-              </span>
-              <div className="space-y-2">
+              <dt className="eyebrow eyebrow-ink pt-1">{item.component}</dt>
+              <dd className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] text-[#8b949e] block font-mono">Baseline (Paddy YOLO):</span>
-                  <span className="text-xs font-mono text-[#8b949e]">{item.baseline}</span>
+                  <span className="eyebrow">Baseline</span>
+                  <p className="numeric mt-1 text-[12px] leading-relaxed text-ink-2">{item.baseline}</p>
                 </div>
-                <div className="pt-2 border-t border-[#1c2432]">
-                  <span className="text-[10px] text-white block font-mono">Enhanced (EMA + DySample):</span>
-                  <span className="text-xs font-mono text-white font-medium">{item.improved}</span>
+                <div>
+                  <span className="eyebrow">Enhanced</span>
+                  <p className="numeric mt-1 text-[12px] leading-relaxed font-medium text-ink">
+                    {item.improved}
+                  </p>
                 </div>
-              </div>
+              </dd>
             </div>
           ))}
-        </div>
-      </div>
+        </dl>
+      </section>
     </div>
   );
 };

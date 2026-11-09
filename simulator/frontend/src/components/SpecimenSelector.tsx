@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, UploadCloud, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Upload, Loader2 } from 'lucide-react';
 import type { SampleImage } from '../types';
 
 interface SpecimenSelectorProps {
@@ -8,6 +8,7 @@ interface SpecimenSelectorProps {
   onSelectSample: (sample: SampleImage) => void;
   onFileUpload: (file: File) => void;
   isLoading: boolean;
+  onStep: (direction: -1 | 1) => void;
 }
 
 export const SpecimenSelector: React.FC<SpecimenSelectorProps> = ({
@@ -16,114 +17,148 @@ export const SpecimenSelector: React.FC<SpecimenSelectorProps> = ({
   onSelectSample,
   onFileUpload,
   isLoading,
+  onStep,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentIndex = samples.findIndex((s) => s.id === selectedSampleId);
   const currentSample = currentIndex >= 0 ? samples[currentIndex] : null;
-
-  const handlePrev = () => {
-    if (samples.length === 0) return;
-    const prevIdx = (currentIndex - 1 + samples.length) % samples.length;
-    onSelectSample(samples[prevIdx]);
-  };
-
-  const handleNext = () => {
-    if (samples.length === 0) return;
-    const nextIdx = (currentIndex + 1) % samples.length;
-    onSelectSample(samples[nextIdx]);
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const found = samples.find((s) => s.id === e.target.value);
-    if (found) {
-      onSelectSample(found);
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      onFileUpload(e.target.files[0]);
-    }
-  };
+  const binomial = currentSample?.description.split('(')[0].trim() ?? 'Locally supplied photograph';
+  const context = currentSample
+    ? currentSample.description.match(/\(([^)]+)\)/)?.[1] ?? 'Benchmark specimen'
+    : 'Custom specimen · not part of benchmark set';
 
   return (
-    <div className="bg-[#11161d] rounded-xl border border-[#1c2432] p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs">
-      {/* Left: Clean Specimen Dropdown & Stepper */}
-      <div className="flex items-center space-x-2 flex-1">
-        <span className="text-xs font-medium text-[#8b949e] whitespace-nowrap">
-          Benchmark Specimen:
-        </span>
-
-        {/* Stepper < */}
-        <button
-          type="button"
-          onClick={handlePrev}
-          disabled={isLoading || samples.length === 0}
-          className="p-1.5 rounded-md bg-[#171e28] hover:bg-[#1f2735] border border-[#1c2432] text-[#8b949e] hover:text-white disabled:opacity-40 transition-colors"
-          title="Previous specimen (Left arrow)"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-
-        {/* Dropdown Menu */}
-        <div className="relative flex-1 max-w-md">
-          <select
-            value={currentSample ? currentSample.id : ''}
-            onChange={handleSelectChange}
-            disabled={isLoading}
-            className="w-full appearance-none bg-[#171e28] hover:bg-[#1f2735] text-xs font-medium text-white pl-3 pr-8 py-2 rounded-lg border border-[#1c2432] focus:outline-none focus:border-[#388bfd] cursor-pointer transition-colors"
+    <section className="animate-rise" aria-labelledby="specimen-heading">
+      <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+        {/* Editorial specimen identity */}
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <span className="eyebrow eyebrow-ink">Run header / specimen</span>
+            <span className="h-px w-8 bg-line-strong" />
+            <span className="eyebrow numeric">
+              {currentSample ? String(currentIndex + 1).padStart(2, '0') : '—'} /{' '}
+              {String(samples.length).padStart(2, '0')}
+            </span>
+          </div>
+          <h2
+            id="specimen-heading"
+            className="mt-2 font-display text-[clamp(32px,4.2vw,50px)] leading-[1.02] font-medium tracking-[-0.03em] text-ink"
           >
-            {samples.map((s, idx) => (
-              <option key={s.id} value={s.id} className="bg-[#11161d] text-white">
-                {idx + 1}. {s.name} ({s.description.split('(')[0].trim()})
-              </option>
-            ))}
-            {!currentSample && <option value="">Custom Uploaded Photo</option>}
-          </select>
-          <ChevronDown className="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-[#8b949e] pointer-events-none" />
+            {currentSample?.name ?? 'Custom Specimen'}
+          </h2>
+          <p className="mt-1.5 font-display text-[16px] italic text-ink-2">
+            {binomial}
+            <span className="ml-2 font-sans text-[12px] not-italic text-ink-3">· {context}</span>
+          </p>
         </div>
 
-        {/* Stepper > */}
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={isLoading || samples.length === 0}
-          className="p-1.5 rounded-md bg-[#171e28] hover:bg-[#1f2735] border border-[#1c2432] text-[#8b949e] hover:text-white disabled:opacity-40 transition-colors"
-          title="Next specimen (Right arrow)"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        {/* Controls */}
+        <div className="flex shrink-0 flex-col gap-2.5 lg:items-end">
+          <span className="eyebrow">Specimen control</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onStep(-1)}
+                disabled={isLoading || samples.length === 0}
+                className="ctl h-10 w-10"
+                title="Previous specimen (←)"
+                aria-label="Previous specimen"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="relative">
+                <label htmlFor="specimen-select" className="sr-only">
+                  Select benchmark specimen
+                </label>
+                <select
+                  id="specimen-select"
+                  value={currentSample ? currentSample.id : ''}
+                  onChange={(e) => {
+                    const found = samples.find((s) => s.id === e.target.value);
+                    if (found) onSelectSample(found);
+                  }}
+                  disabled={isLoading}
+                  className="h-10 w-[228px] appearance-none rounded-[4px] border border-line bg-surface pl-3 pr-9 text-[12px] font-medium text-ink transition-colors hover:border-line-strong focus:border-leaf focus:outline-none disabled:opacity-50 sm:w-[264px]"
+                >
+                  {samples.map((s, idx) => (
+                    <option key={s.id} value={s.id}>
+                      {String(idx + 1).padStart(2, '0')} · {s.name}
+                    </option>
+                  ))}
+                  {!currentSample && <option value="">Custom upload</option>}
+                </select>
+                <ChevronDown className="pointer-events-none absolute top-3 right-3 h-4 w-4 text-ink-3" />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onStep(1)}
+                disabled={isLoading || samples.length === 0}
+                className="ctl h-10 w-10"
+                title="Next specimen (→)"
+                aria-label="Next specimen"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onFileUpload(file);
+                e.target.value = '';
+              }}
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+              className="ctl ctl-solid h-10 gap-2 px-4 text-[12px] font-semibold"
+              title="Upload your own specimen photograph"
+            >
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {isLoading ? 'Evaluating…' : 'Upload specimen'}
+            </button>
+          </div>
+
+          {/* Clickable position ticks */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1" role="group" aria-label="Jump to specimen">
+              {samples.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onSelectSample(s)}
+                  disabled={isLoading}
+                  title={s.name}
+                  aria-label={`Specimen ${idx + 1}: ${s.name}`}
+                  aria-current={s.id === selectedSampleId ? 'true' : undefined}
+                  className={`h-[3px] w-6 rounded-full transition-all duration-300 ${
+                    s.id === selectedSampleId
+                      ? 'bg-leaf'
+                      : 'bg-line-strong hover:bg-ink-3'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="eyebrow ml-1 hidden xl:inline">← → to step</span>
+          </div>
+        </div>
       </div>
 
-      {/* Right: Upload Custom Photo */}
-      <div className="shrink-0 flex items-center space-x-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileInput}
-          disabled={isLoading}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isLoading}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg border text-xs font-medium transition-colors ${
-            isLoading
-              ? 'bg-[#171e28] border-[#1c2432] text-[#8b949e] cursor-wait'
-              : 'bg-[#171e28] hover:bg-[#1f2735] border-[#1c2432] hover:border-[#283344] text-white shadow-xs'
-          }`}
-        >
-          {isLoading ? (
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#8b949e]" />
-          ) : (
-            <UploadCloud className="h-3.5 w-3.5 text-[#8b949e]" />
-          )}
-          <span>{isLoading ? 'Processing...' : 'Upload Photo'}</span>
-        </button>
-      </div>
-    </div>
+      <div className="mt-6 h-px w-full bg-line" />
+    </section>
   );
 };

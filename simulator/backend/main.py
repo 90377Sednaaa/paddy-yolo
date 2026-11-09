@@ -95,35 +95,37 @@ def get_statistics() -> Dict[str, Any]:
 @app.get("/api/samples")
 def get_sample_images() -> Dict[str, Any]:
     """List sample test images available for instant evaluation."""
+    # Description order is "Binomial name (field note)" to match the bundled
+    # benchmark cache used by the frontend while the API is unavailable.
     items = [
         {
             "id": "sample_rice_leaf_roller.jpg",
             "name": "Rice Leaf Roller",
-            "description": "Foliage specimen (Cnaphalocrocis medinalis)",
+            "description": "Cnaphalocrocis medinalis (Foliage pest)",
             "url": "/api/samples/sample_rice_leaf_roller.jpg",
         },
         {
             "id": "sample_pink_rice_borer.jpg",
             "name": "Pink Rice Borer",
-            "description": "Stem base larva (Sesamia inferens)",
+            "description": "Sesamia inferens (Stem base larva)",
             "url": "/api/samples/sample_pink_rice_borer.jpg",
         },
         {
             "id": "sample_brown_plant_hopper.jpg",
             "name": "Brown Plant Hopper",
-            "description": "Tiller cluster (Nilaparvata lugens)",
+            "description": "Nilaparvata lugens (Tiller sap-feeder)",
             "url": "/api/samples/sample_brown_plant_hopper.jpg",
         },
         {
             "id": "sample_yellow_rice_borer.jpg",
             "name": "Yellow Rice Borer",
-            "description": "Flag leaf pest (Scirpophaga incertulas)",
+            "description": "Scirpophaga incertulas (Flag leaf pest)",
             "url": "/api/samples/sample_yellow_rice_borer.jpg",
         },
         {
             "id": "sample_rice_leaf_hopper.jpg",
             "name": "Rice Leaf Hopper",
-            "description": "Canopy pest (Nephotettix cincticeps)",
+            "description": "Nephotettix cincticeps (Canopy vector)",
             "url": "/api/samples/sample_rice_leaf_hopper.jpg",
         },
     ]

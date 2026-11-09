@@ -6,6 +6,9 @@ __pycache__/
 dist/
 build/
 runs/
+.venv/
+venv/
+.workbuddy-ai/
 
 *.png
 *.jpg

@@ -1,61 +1,114 @@
-import React from 'react';
-import { X, Command } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const GROUPS: { title: string; hint: string; items: { keys: string[]; desc: string }[] }[] = [
+  {
+    title: 'Workspace',
+    hint: 'Navigation and selection',
+    items: [
+      { keys: ['1', '–', '5'], desc: 'Select a benchmark specimen' },
+      { keys: ['←', '→'], desc: 'Previous / next specimen' },
+      { keys: ['M'], desc: 'Switch between workspaces' },
+      { keys: ['?'], desc: 'Open or close this reference' },
+      { keys: ['Esc'], desc: 'Close dialog' },
+    ],
+  },
+  {
+    title: 'Inspection stage',
+    hint: 'Viewport and annotation controls',
+    items: [
+      { keys: ['V'], desc: 'Cycle view mode: dual / diff / single' },
+      { keys: ['+', '−'], desc: 'Zoom in / out' },
+      { keys: ['0'], desc: 'Reset zoom and pan' },
+      { keys: ['L'], desc: 'Cycle labels: full / scores / off' },
+    ],
+  },
+];
+
 export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen, onClose }) => {
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) closeRef.current?.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const shortcuts = [
-    { key: '1 - 5', desc: 'Select benchmark insect specimen' },
-    { key: 'V', desc: 'Cycle inspection mode (Side-by-Side / Diff / Single)' },
-    { key: '+ / -', desc: 'Zoom in / Zoom out on viewport' },
-    { key: '0', desc: 'Reset zoom to fit view' },
-    { key: 'M', desc: 'Toggle Simulator / Statistics tab' },
-    { key: 'L', desc: 'Toggle detection labels (Labels / Scores / Off)' },
-    { key: '?', desc: 'Toggle keyboard shortcuts cheatsheet' },
-    { key: 'Esc', desc: 'Close dialog or deselect insect' },
-  ];
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-[#11161d] border border-[#1c2432] rounded-xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1c2432] bg-[#171e28]">
-          <div className="flex items-center space-x-2">
-            <Command className="h-4 w-4 text-[#8b949e]" />
-            <h3 className="text-sm font-semibold text-white tracking-tight">Workbench Keyboard Shortcuts</h3>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f0b]/55 p-4 backdrop-blur-[3px]"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      data-modal-open="true"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
+        className="animate-rise w-full max-w-[540px] overflow-hidden rounded-[6px] border border-line bg-surface shadow-[var(--shadow-overlay)]"
+      >
+        <div className="flex items-start justify-between border-b border-line px-6 py-5">
+          <div>
+            <p className="eyebrow">Console reference</p>
+            <h2
+              id="shortcuts-title"
+              className="mt-1 font-display text-[26px] leading-tight font-medium tracking-[-0.02em] text-ink"
+            >
+              Keyboard shortcuts
+            </h2>
+            <p className="mt-1 text-[12px] text-ink-2">
+              Shortcuts are disabled while a text field or selector has focus.
+            </p>
           </div>
           <button
+            ref={closeRef}
+            type="button"
             onClick={onClose}
-            className="text-[#656d76] hover:text-white p-1 rounded transition-colors"
+            className="ctl h-8 w-8 shrink-0"
+            aria-label="Close keyboard reference"
             title="Close (Esc)"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-2.5">
-          {shortcuts.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-[#171e28] transition-colors"
-            >
-              <span className="text-xs text-[#8b949e]">{item.desc}</span>
-              <kbd className="px-2 py-0.5 text-xs font-mono font-medium text-white bg-[#171e28] border border-[#1c2432] rounded shadow-xs">
-                {item.key}
-              </kbd>
+        <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+          {GROUPS.map((group, i) => (
+            <div key={group.title} className={`px-6 py-5 ${i === 0 ? 'sm:border-r sm:border-line' : ''}`}>
+              <p className="eyebrow eyebrow-ink">{group.title}</p>
+              <p className="mt-0.5 mb-3 font-display text-[15px] italic text-ink-3">{group.hint}</p>
+              <dl className="space-y-2.5">
+                {group.items.map((item) => (
+                  <div key={item.desc} className="flex items-center justify-between gap-3">
+                    <dt className="text-[12px] leading-snug text-ink-2">{item.desc}</dt>
+                    <dd className="flex shrink-0 items-center gap-1">
+                      {item.keys.map((k, ki) => (
+                        <kbd
+                          key={`${k}-${ki}`}
+                          className={`numeric min-w-[22px] rounded-[3px] border border-line bg-surface-2 px-1.5 py-0.5 text-center text-[10px] leading-[15px] text-ink shadow-[0_1px_0_var(--c-line)] ${
+                            k === '–' || k === '←' || k === '→' ? 'border-0 bg-transparent shadow-none' : ''
+                          }`}
+                        >
+                          {k}
+                        </kbd>
+                      ))}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           ))}
         </div>
 
-        <div className="px-5 py-3 border-t border-[#1c2432] bg-[#0b0f14] text-right">
-          <button
-            onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#171e28] hover:bg-[#1f2735] border border-[#1c2432] rounded-md transition-colors"
-          >
+        <div className="flex items-center justify-between border-t border-line bg-surface-2/60 px-6 py-3">
+          <span className="eyebrow">Press ? to dismiss</span>
+          <button type="button" onClick={onClose} className="ctl h-8 px-3 text-[11px] font-medium">
             Close
           </button>
         </div>
