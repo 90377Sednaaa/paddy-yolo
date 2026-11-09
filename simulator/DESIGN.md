@@ -1,16 +1,24 @@
-# Design System: Paddy-YOLO Simulator
+# Design System: Paddy-YOLO Model Evaluation Simulator
 
-## Visual Direction
-- **Mode**: Operate (high scanability, technical precision, zero AI clichés).
-- **Zero Emojis**: Replaced entirely by SVG icons from Lucide React (stroke width 1.5px).
-- **Typography**:
-  - Headings: High-legibility sans-serif with negative tracking (`tracking-tight`).
-  - Numerals & Stats: Strict `tabular-nums font-mono` to prevent visual jitter during live millisecond counter updates.
-- **Color Palette**:
-  - Canvas & Shell: `#0a0d14` (Deep obsidian neutral)
-  - Secondary Cards: `#111622` with `#232d42` border
-  - Model 1 (Paddy YOLO): `#38bdf8` (Precision sky blue)
-  - Model 2 (Paddy YOLO EMA + Dysample): `#10b981` (Agricultural emerald)
-- **Canvas Overlays**:
-  - Semi-transparent fill (`#...1a`) with 2px solid stroke per insect species.
-  - Micro tags with high-contrast dark text on colored background for species name and confidence percentage.
+## Visual Philosophy & Mode
+- **Mode**: Operate (clean research workbench, quiet studio contrast, zero neon).
+- **Refinement Principles**:
+  - **No Curtains**: Removed split-curtain slider in favor of standard, side-by-side dual viewports with synchronized pan and zoom.
+  - **Streamlined Specimen Control**: Replaced horizontal carousel with a clean dropdown selector and stepper (`<` `>`), keeping vertical space compact and focused on inspection.
+  - **Minimal Navbar**: Removed status badges (weights and engine online); focused purely on branding, tab navigation, and keyboard help.
+  - **Subdued, Mature Palette**: Replaced high-saturation neon greens and bright cyan blues with calm, natural botanical and slate tones. Zero glowing halos or neon text.
+
+## Color Palette (Subdued & Non-Neon)
+- **Base Ground**: `#0b0f14` (Deep neutral slate)
+- **Panel Surface**: `#11161d` (Calm charcoal surface)
+- **Secondary Surfaces & Controls**: `#171e28` (Subtle elevated dark slate)
+- **Hairline Borders**: `#1c2432` (Subdued 1px boundary) and `#283344` (Focused / active boundary)
+- **Model Annotation Strokes**:
+  - Baseline (Paddy YOLO): `#58a6ff` (Soft cornflower slate blue, 1.5px stroke, no neon)
+  - Enhanced (Paddy YOLO EMA + DySample): `#3fb950` (Natural leaf green, 1.5px stroke, no neon)
+  - Consensus: `#8b949e` (Neutral silver slate)
+  - Target Reticle: `#d29922` (Warm amber gold)
+- **Text Hierarchy**:
+  - Primary: `#e6edf3`
+  - Secondary: `#8b949e`
+  - Dim / Tertiary: `#656d76`

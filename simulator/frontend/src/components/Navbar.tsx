@@ -1,63 +1,61 @@
 import React from 'react';
-import { BarChart3, Layers } from 'lucide-react';
+import { Eye, BarChart3, HelpCircle } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 interface NavbarProps {
   activeTab: 'simulator' | 'statistics';
   setActiveTab: (tab: 'simulator' | 'statistics') => void;
-  isBackendHealthy: boolean;
+  onOpenShortcuts: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  isBackendHealthy,
+  onOpenShortcuts,
 }) => {
   return (
-    <header className="border-b border-[#232d42] bg-[#0a0d14]/90 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="border-b border-[#1c2432] bg-[#0b0f14]/95 backdrop-blur-md sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+        {/* Left: Branding */}
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-lg bg-[#111622] border border-[#232d42] p-1 flex items-center justify-center overflow-hidden shadow-inner">
+          <div className="h-8 w-8 rounded-md bg-[#11161d] border border-[#283344] p-1 flex items-center justify-center shrink-0">
             <img
               src={logoImg}
-              alt="Paddy-YOLO Rice Pest Logo"
+              alt="Paddy-YOLO Pest Detection"
               className="h-full w-full object-contain"
             />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-semibold tracking-tight text-white text-base">
+              <span className="font-semibold text-white text-sm tracking-tight">
                 Paddy-YOLO
               </span>
-              <span className="text-xs px-2 py-0.5 rounded bg-[#182030] border border-[#232d42] text-[#94a3b8] font-mono">
-                Vision Arena
+              <span className="text-[11px] font-mono text-[#8b949e]">
+                Model Evaluation Simulator
               </span>
             </div>
-            <p className="text-xs text-[#64748b]">
-              Rice Pest Detection & Dual Model Simulator
-            </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex space-x-1 p-1 bg-[#111622] rounded-lg border border-[#232d42]">
+        {/* Center: Clean Segmented Navigation */}
+        <nav className="flex items-center p-1 bg-[#11161d] rounded-lg border border-[#1c2432]">
           <button
             onClick={() => setActiveTab('simulator')}
-            className={`flex items-center space-x-2 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'simulator'
-                ? 'bg-[#182030] text-white shadow-sm border border-[#334155]'
-                : 'text-[#94a3b8] hover:text-white'
+                ? 'bg-[#1f2735] text-white shadow-xs'
+                : 'text-[#8b949e] hover:text-white'
             }`}
           >
-            <Layers className="h-3.5 w-3.5" />
+            <Eye className="h-3.5 w-3.5" />
             <span>Dual Model Simulator</span>
           </button>
           <button
             onClick={() => setActiveTab('statistics')}
-            className={`flex items-center space-x-2 px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'statistics'
-                ? 'bg-[#182030] text-white shadow-sm border border-[#334155]'
-                : 'text-[#94a3b8] hover:text-white'
+                ? 'bg-[#1f2735] text-white shadow-xs'
+                : 'text-[#8b949e] hover:text-white'
             }`}
           >
             <BarChart3 className="h-3.5 w-3.5" />
@@ -65,16 +63,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Backend Status indicator */}
+        {/* Right: Keyboard Shortcuts Trigger */}
         <div className="flex items-center space-x-2">
-          <div
-            className={`h-2 w-2 rounded-full ${
-              isBackendHealthy ? 'bg-[#10b981]' : 'bg-[#ef4444]'
-            }`}
-          />
-          <span className="text-xs text-[#94a3b8] font-mono">
-            {isBackendHealthy ? 'Service Active' : 'Connecting...'}
-          </span>
+          <button
+            onClick={onOpenShortcuts}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-md bg-[#11161d] hover:bg-[#171e28] border border-[#1c2432] text-xs text-[#8b949e] hover:text-white transition-colors"
+            title="Keyboard Shortcuts (?)"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            <span className="font-mono text-[11px]">?</span>
+          </button>
         </div>
       </div>
     </header>
